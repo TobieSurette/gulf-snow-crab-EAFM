@@ -3,12 +3,12 @@ library(gulf.graphics)
 
 clg()
 
-years <- 2011:2020
+years <- 2000:2020
 
 for (i in 1:length(years)){
    b <- read.scsbio(years[i], survey = "regular", sex = 1)
 
-   windows()
+   quartz()
    x <- log(b$carapace.width)
    y <- log(b$chela.height)
    index <- is.finite(x) & is.finite(y) & !is.na(x) & !is.na(y)
