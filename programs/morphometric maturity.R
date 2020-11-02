@@ -1,4 +1,4 @@
-year <- 1987
+year <- 2020
 
 # - Add samplers to plots
 # - SPL model for the proportions, two inflection points, but start with a single one.
@@ -10,6 +10,7 @@ year <- 1987
 # - Output summary plot for each year
 # - Add more summary stats on yearly plots: samplers, # tows in survey, # crab, densities
 # - Once a reliable classification is is hand, check for spatial patterns, depth patterns.
+#'- Add classified data z
 
 # Load dataset:
 b <- read.scsbio(year, survey = "regular", sex = 1)
