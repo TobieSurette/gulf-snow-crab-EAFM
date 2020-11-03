@@ -11,6 +11,9 @@ year <- 2020
 # - Add more summary stats on yearly plots: samplers, # tows in survey, # crab, densities
 # - Once a reliable classification is is hand, check for spatial patterns, depth patterns.
 #'- Add classified data z
+#'- Issues
+#'- Create bibliography for EAFM project
+#- Create growth.R, maturity.R, mortality.R, etc... in population model.
 
 # Load dataset:
 b <- read.scsbio(year, survey = "regular", sex = 1)

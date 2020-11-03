@@ -1,15 +1,18 @@
 Bibliography
 
 Murphy, J.T., 2019, Patterns and implications of skip-molting for the Eastern Bering Sea snow and Tanner crab
-(Chionoecetes opilio and C. bairdi), Fisheries Research, Fisheries Research, 210:63-70
+(Chionoecetes opilio and C. bairdi), Fisheries Research, Fisheries Research, 210:63-70.
 
 - Issues
-- Add buffer zone limits to fishery polygons.
-- Zone 19 or Zone F possibly missing some boundary lines
-- Add Yves data to gulf.manage/data/raw and write scsset.R build function which incorporates old set data with new set data
 - Extract some set data from bio data
 - Create bibliography for EAFM project
 - Create growth.R, maturity.R, mortality.R, etc... in population model.
-
-
+- Finish gse2gsd reformatting
+- Import nss catch data, make sure to include sample.weight, size-class
+- Import and reformat length frequency data. Sampling ratio should be derived from catch where possible.
+- Write sampling ratio function for this purpose.
+- Make sure size class is in length-frequency data.
+- Record one length and frequency per line?
+- Create nssbio data from length data, include size class as an index (date, cruise, species, sample(size.class), fish.number?, 
+- 
 

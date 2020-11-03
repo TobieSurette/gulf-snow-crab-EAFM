@@ -8,7 +8,8 @@ years <- 2000:2020
 for (i in 1:length(years)){
    b <- read.scsbio(years[i], survey = "regular", sex = 1)
 
-   quartz()
+   gdevice()
+   
    x <- log(b$carapace.width)
    y <- log(b$chela.height)
    index <- is.finite(x) & is.finite(y) & !is.na(x) & !is.na(y)
@@ -22,3 +23,5 @@ for (i in 1:length(years)){
    v <- seq(10, 100, by = 10)
    vline(log(v), col = "red")
 }
+
+
