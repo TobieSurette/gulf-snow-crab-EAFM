@@ -1,5 +1,6 @@
 library(gulf.data)
 library(gulf.graphics)
+library(mgcv)
 
 years <- 1990:2020
 
@@ -10,6 +11,7 @@ years <- 1990:2020
 k <- matrix(0, nrow = length(20:90), ncol = length(years))
 dimnames(k) <- list(cw = 20:90, year = years)
 n <- k
+s <- list(mu = NULL, sigma = NULL, n = NULL)
 for (i in 1:length(years)){
    print(years[i])
    # Load dataset:
@@ -27,24 +29,43 @@ for (i in 1:length(years)){
    
    k[as.character(res$cw), i] <- res$k
    n[as.character(res$cw), i] <- res$n
+   
+   s$mu[i] <- mean(b$carapace.width[which(b$maturity)], na.rm = TRUE)
+   s$sigma[i] <- sd(b$carapace.width[which(b$maturity)], na.rm = TRUE)
+   s$n[i] <- length(which(b$maturity))
 }  
 
+gdevice("pdf", file = "results/figures/sGSL female snow crab - new-shelled mature size")
+
+# Mean size of new matures:
+plot(range(years), c(50, 70), type = "n", yaxs = "i", xlab = "", ylab = "")
+grid()
+gbarplot(s$mu, years, add = TRUE, width = 1, col = "grey90", border = "grey50")  
+error.bar(years, lower = s$mu - 1.96 * s$sigma / sqrt(s$n), upper = s$mu + 1.96 * s$sigma / sqrt(s$n))
+mtext("Survey year", 1, 2, cex = 1.5)
+mtext("Carapace width (mm)", 2, 2, cex = 1.5)
+mtext("sGSL female snow crab - new-shelled mature size", 3, 1, cex = 1.5)
+box()
+dev.off()
+
+
 # Calculate average global proportions:
-pg <- apply(k/n, 1, function(x) return(mean(x[is.finite(x)], na.rm = TRUE)))
+logit <- function(x) return(log(x/(1-x)))
+pg <- apply(p, 1, function(x) return(mean(x[is.finite(x)], na.rm = TRUE)))
 pg[as.numeric(names(pg)) > 80] <- 1 # Ad hoc fix.
 p <- k/n
-r <- k/n - repvec(pg, ncol = length(years))
+r <- logit(p) - repvec(logit(pg), ncol = length(years))
 
 # Maturity anomalies figure:
+#gdevice("pdf", file = "results/figures/sGSL female snow crab maturity anomalies")
 clg()
-gdevice("pdf", file = "results/figures/sGSL female snow crab maturity anomalies")
-colorbar(seq(-0.5, 0.5, by = 0.1), col = c("blue", "white", "red"),
+colorbar(round(seq(-4, 4, by = 0.5), 1), col = c("blue", "white", "red"),
          caption = c("logit-scale", "deviation"), smooth = TRUE)
 
 image(as.numeric(colnames(r)), as.numeric(rownames(r)), 
       t(r), xlab = "", ylab = "", zlim = c(-0.5, 0.5),
-      breaks = seq(-0.5, 0.5, by = 0.01), 
-      col = colorRampPalette(c("blue", "white", "red"))(100),
+      breaks = seq(-4, 4, by = 0.1), 
+      col = colorRampPalette(c("blue", "white", "red"))(80),
       ylim = c(30, 75))
 mtext("Survey year", 1, 2, cex = 1.5)
 mtext("Carapace width (mm)", 2, 2, cex = 1.5)
