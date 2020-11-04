@@ -4,8 +4,7 @@ beta <- c(0, 1, -1)
 transition = c(1, 2)
 window <- 0.08
 
-
-windows(width = 10)
+gdevice()
 m <- rbind(matrix(1, nrow = 3, ncol = 5), matrix(2, nrow = 3, ncol = 5))
 m <- rbind(0, cbind(0, m, 0), 0)
 layout(m)

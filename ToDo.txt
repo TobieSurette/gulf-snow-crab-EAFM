@@ -7,12 +7,11 @@ Murphy, J.T., 2019, Patterns and implications of skip-molting for the Eastern Be
 - Extract some set data from bio data
 - Create bibliography for EAFM project
 - Create growth.R, maturity.R, mortality.R, etc... in population model.
-- Finish gse2gsd reformatting
 - Import nss catch data, make sure to include sample.weight, size-class
 - Import and reformat length frequency data. Sampling ratio should be derived from catch where possible.
 - Write sampling ratio function for this purpose.
 - Make sure size class is in length-frequency data.
 - Record one length and frequency per line?
 - Create nssbio data from length data, include size class as an index (date, cruise, species, sample(size.class), fish.number?, 
-- 
+- Write Markdown version of figures, along with captions and comments
 

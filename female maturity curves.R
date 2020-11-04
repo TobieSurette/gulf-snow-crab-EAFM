@@ -52,7 +52,6 @@ mtext("sGSL female snow crab - new-shelled mature size", 3, 1, cex = 1.5)
 box()
 dev.off()
 
-
 # Calculate average global proportions:
 p <- 1 / (1 + exp(-logit.p))
 r <- logit.p - repvec(apply(logit.p, 1, mean), ncol = length(years))
@@ -62,9 +61,7 @@ p[logit.p.sd > 3] <- NA
 # Maturity proportion matrix figure:
 clg()
 gdevice("pdf", file = "results/figures/sGSL SC female maturity proportions")
-colorbar(round(seq(0, 1, by = 0.2), 1), col = c("blue", "white", "red"),
-         caption = c("logit-scale", "deviation"), smooth = TRUE)
-
+colorbar(round(seq(0, 1, by = 0.2), 1), col = c("blue", "white", "red"), caption = c("logit-scale", "deviation"), smooth = TRUE)
 image(as.numeric(colnames(p)), as.numeric(rownames(p)), 
       t(p), xlab = "", ylab = "", 
       breaks = seq(0, 1, by = 0.1), 
@@ -75,15 +72,12 @@ mtext("Survey year", 1, 2, cex = 1.5)
 mtext("Carapace width (mm)", 2, 2, cex = 1.5)
 mtext("Proportion of matures female snow crab", 3, 1, cex = 1.5)
 box()
-
 dev.off()
 
 # Maturity anomalies figure:
 clg()
 gdevice("pdf", file = "results/figures/sGSL SC female maturity anomalies")
-colorbar(round(seq(-4, 4, by = 0.5), 1), col = c("blue", "white", "red"),
-         caption = c("logit-scale", "deviation"), smooth = TRUE)
-
+colorbar(round(seq(-4, 4, by = 0.5), 1), col = c("blue", "white", "red"), caption = c("logit-scale", "deviation"), smooth = TRUE)
 image(as.numeric(colnames(r)), as.numeric(rownames(r)), 
       t(r), xlab = "", ylab = "", zlim = c(-0.5, 0.5),
       breaks = seq(-4, 4, by = 0.1), 
@@ -93,7 +87,6 @@ mtext("Survey year", 1, 2, cex = 1.5)
 mtext("Carapace width (mm)", 2, 2, cex = 1.5)
 mtext("Maturation anomalies for female snow crab", 3, 1, cex = 1.5)
 box()
-
 dev.off()
 
 # Maturity curves overlapped:
@@ -115,7 +108,5 @@ legend("topleft",
        lwd = 2, 
        col = c("red", "grey60"),
        bg = "white")
-       
-   
 box()
 dev.off()

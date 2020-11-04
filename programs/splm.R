@@ -1,19 +1,35 @@
-# SPLM class
+#' Smoothed Piecewise Linear Models
+#' 
+#' @description Functions for fitting 
+#' 
+#' @param x Numeric vector at which the function is to be evaluated.
+#' @param theta Named parameter vector with an intercept parameter \code{alpha}, slope parameters \code{beta0, ..., betak}, 
+#'              where \code{k} is the number of transition (i.e. break) points, \code{transition1, ..., transitionk} and 
+#'              \code{window}, the transition window scale parameter (log-scale). \code{window} may also vary by transition 
+#'              point.
+#'              
+#' @return A vector of the function evaluated at 'x'. If 'x' is not specified, then a function is returned.
 
-logistic <- function(x, beta, scale = 1) 1 / (1 + exp(-x/scale))
-ilogistic <- function(x, scale = 1) 1 / (1 + exp(-x/scale))
-
-# SPLM - Smoothed piecewise linear model.
-splm <- function(x, alpha, beta, transition, precision){
-   k <- length(transition) # Model order.
-   if (length(precision) == 1) precision <- rep(precision, k) 
-   precision <- exp(precision)
-   
-   # SPLM model:
-   v <- alpha + beta[1] * x # First linear component.
-   if (k > 0){
-      for (i in 1:k) v <- v + precision[i] * (beta[i+1] - beta[i]) * log(1 + exp((x - transition[i]) / precision[i]))
+#' Smoothed piecewise-linear model:
+#' @export
+splm <- function(x, theta){
+   if (missing(x)){
+      # Parse 'theta':
+      alpha <- theta[grep("alpha", names(theta))]
+      beta <- theta[grep("beta", names(theta))]
+      transition <- theta[grep("transition", names(theta))]
+      window <- exp(theta[grep("window", names(theta))])
+      k <- length(transition)
+      if (length(window) == 1) window <- rep(window, k)
+      
+      # Define 'splm' function:
+      f <- function(x){
+         y <- alpha + beta[1] * x
+         for (i in 1:k) y <- y + window[i] * (beta[i+1] - beta[i]) * log(1 + exp((x - transition[i]) / window[i]))
+      }
+      return(f)   
+   }else{
+      return(splm(theta = theta)(x))
    }
-   
-   return(v)
 }
+

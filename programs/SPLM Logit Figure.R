@@ -1,27 +1,20 @@
 
-alpha <- -10.06351
-beta <- c(0.14367326, 0.02815601, 0.23687980)
-transition = c(60.98740, 98.36155)
-window <- exp(1.0)
+theta <- c(alpha = -10.06351,
+           beta = c(0.14367326, 0.02815601, 0.23687980),
+           transition = c(60.98740, 98.36155),
+           window = 1)
+
+
+
 xx <- seq(40, 120, len = 1000)
 
-
-splm <- function(){
-
-   
-   
-   
-}
-   
-   
-   
 m <- rbind(matrix(1, nrow = 3, ncol = 5), matrix(2, nrow = 3, ncol = 5), matrix(3, nrow = 3, ncol = 5))
 m <- rbind(0, cbind(0, m, 0), 0)
 layout(m)
 par(mar = c(0, 0, 0, 0))
 
 step <- function(x) as.numeric(x >= 0)
-logistic <- function(x, scale = 1) 1 / (1 + exp(-x/scale))
+logistic <- function(x, scale = 1) return(1 / (1 + exp(-x/scale)))
 
 vv <- rep(beta[1], length(xx))
 ll <- vv
@@ -49,7 +42,7 @@ for (i in 1:k) ss <- ss + 0.001 * (beta[i+1] - beta[i]) * fun((xx - transition[i
 ii <- alpha + beta[1] * xx
 for (i in 1:k) ii <- ii + window * (beta[i+1] - beta[i]) * log(1 + exp((xx - transition[i]) / window))
 
-# Logistic scale piecewise linear:
+# Piecewise linear:
 plot(xx, ss, type = "l", lwd = 2, col = "blue", ylab = "", xaxt = "n", cex.lab = 1.25)
 lines(xx, ii, lwd = 2, col = "red")
 mtext("Function value", 2, 2.5, cex = 1.25)
@@ -64,5 +57,4 @@ mtext("x", 1, 3, cex = 1.5)
 mtext("Logistic transform", 2, 2.5, cex = 1.25)
 for (i in 1:k) lines(rep(transition[i], 2), par("usr")[3:4], lwd = 2, lty = "dashed", col = "black")
 text(par("usr")[1] + 0.5 * diff(par("usr")[1:2]), par("usr")[3] + 0.9 * diff(par("usr")[3:4]), "Logit-piecewise Linear", cex = 1.5)
-
 legend("topright", legend = c("Regular", "Logistic-Smoothed"), lwd = 2, col = c("blue", "red"), bg = "white", cex = 1.4)
