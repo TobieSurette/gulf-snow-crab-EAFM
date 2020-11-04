@@ -10,15 +10,15 @@
 #'              
 #' @return A vector of the function evaluated at 'x'. If 'x' is not specified, then a function is returned.
 
-#' Smoothed piecewise-linear model:
+#' @describeIn splm Smoothed piecewise-linear model definition and evaluation.
 #' @export
 splm <- function(x, theta){
    if (missing(x)){
       # Parse 'theta':
-      alpha <- theta[grep("alpha", names(theta))]
-      beta <- theta[grep("beta", names(theta))]
-      transition <- theta[grep("transition", names(theta))]
-      window <- exp(theta[grep("window", names(theta))])
+      alpha <- theta[sort(names(theta)[grep("alpha", names(theta))])]
+      beta <- theta[sort(names(theta)[grep("beta", names(theta))])]
+      transition <- theta[sort(names(theta)[grep("transition", names(theta))])]
+      window <- exp(theta[sort(names(theta)[grep("window", names(theta))])])
       k <- length(transition)
       if (length(window) == 1) window <- rep(window, k)
       
@@ -26,6 +26,8 @@ splm <- function(x, theta){
       f <- function(x){
          y <- alpha + beta[1] * x
          for (i in 1:k) y <- y + window[i] * (beta[i+1] - beta[i]) * log(1 + exp((x - transition[i]) / window[i]))
+         names(y) <- names(x)
+         return(y)
       }
       return(f)   
    }else{
