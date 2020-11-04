@@ -4,40 +4,44 @@ library(mgcv)
 
 years <- 1990:2020
 
-#gdevice(layout = 1:5)
+# Load data:
+b <- read.scsbio(years, survey = "regular", sex = 2)
+b  <- b[which(is.new.shell(b)), ]
+b$maturity <- is.mature(b)
+b <- b[!is.na(b$maturity), ]
+b <- b[!is.na(b$carapace.width) & (b$carapace.width <= 90), ]
+b$year <- as.factor(year(b))
 
+m <- gam(maturity ~ s(carapace.width, by = year), 
+         family = binomial, 
+         data = b[sample(1:nrow(b), 10000), ])
+x0 <- seq(20, 90, len = 1000)
+plot(x0, predict(m, newdata = list(carapace.width = x0)))
 
 # Compile maturity statistics:
-k <- matrix(0, nrow = length(20:90), ncol = length(years))
-dimnames(k) <- list(cw = 20:90, year = years)
-n <- k
+logit.p <- matrix(0, nrow = length(20:90), ncol = length(years))
+dimnames(logit.p) <- list(cw = 20:90, year = years)
+p <- logit.p
+logit.p.sd <- p
 s <- list(mu = NULL, sigma = NULL, n = NULL)
 for (i in 1:length(years)){
    print(years[i])
-   # Load dataset:
-   b <- read.scsbio(years[i], survey = "regular", sex = 2)
-   b  <- b[which(is.new.shell(b)), ]
-   b$maturity <- is.mature(b)
-
-   # Calculate maturity proportions:
-   res <- aggregate(list(k = b$maturity), by = list(cw = round(b$carapace.width)), function(x) return(length(which(x == 1))))
-   res$n <- aggregate(list(n = b$maturity), by = list(cw = round(b$carapace.width)), function(x) return(sum(!is.na(x))))$n
-   res$p <- res$k / res$n
-   res$logit.p <- log(res$p/(1-res$p))
+   m <- gam(maturity ~ carapace.width + s(carapace.width), 
+         family = binomial, 
+         data = b[b$year == years[i], ])
+   tmp <- predict(m, newdata = list(carapace.width = as.numeric(row.names(p))), se.fit = TRUE)
+   logit.p[,i] <- tmp$fit
+   logit.p.sd[,i] <- tmp$se.fit
    
-   res <- res[res$cw %in% row.names(k), ]
-   
-   k[as.character(res$cw), i] <- res$k
-   n[as.character(res$cw), i] <- res$n
-   
-   s$mu[i] <- mean(b$carapace.width[which(b$maturity)], na.rm = TRUE)
-   s$sigma[i] <- sd(b$carapace.width[which(b$maturity)], na.rm = TRUE)
-   s$n[i] <- length(which(b$maturity))
+   # Recalculate mean size:
+   cw <- b$carapace.width[which(b$maturity & b$year == years[i])]
+   s$mu[i] <- mean(cw, na.rm = TRUE)
+   s$sigma[i] <- sd(cw, na.rm = TRUE)
+   s$n[i] <- length(cw)
 }  
 
-gdevice("pdf", file = "results/figures/sGSL female snow crab - new-shelled mature size")
-
 # Mean size of new matures:
+gdevice("pdf", file = "results/figures/sGSL SC female - new-shelled mature size")
 plot(range(years), c(50, 70), type = "n", yaxs = "i", xlab = "", ylab = "")
 grid()
 gbarplot(s$mu, years, add = TRUE, width = 1, col = "grey90", border = "grey50")  
@@ -50,15 +54,33 @@ dev.off()
 
 
 # Calculate average global proportions:
-logit <- function(x) return(log(x/(1-x)))
-pg <- apply(p, 1, function(x) return(mean(x[is.finite(x)], na.rm = TRUE)))
-pg[as.numeric(names(pg)) > 80] <- 1 # Ad hoc fix.
-p <- k/n
-r <- logit(p) - repvec(logit(pg), ncol = length(years))
+p <- 1 / (1 + exp(-logit.p))
+r <- logit.p - repvec(apply(logit.p, 1, mean), ncol = length(years))
+r[logit.p.sd > 3] <- NA
+p[logit.p.sd > 3] <- NA
+
+# Maturity proportion matrix figure:
+clg()
+gdevice("pdf", file = "results/figures/sGSL SC female maturity proportions")
+colorbar(round(seq(0, 1, by = 0.2), 1), col = c("blue", "white", "red"),
+         caption = c("logit-scale", "deviation"), smooth = TRUE)
+
+image(as.numeric(colnames(p)), as.numeric(rownames(p)), 
+      t(p), xlab = "", ylab = "", 
+      breaks = seq(0, 1, by = 0.1), 
+      zlim = c(0, 1),
+      col = colorRampPalette(c("blue", "white", "red"))(10),
+      ylim = c(30, 75))
+mtext("Survey year", 1, 2, cex = 1.5)
+mtext("Carapace width (mm)", 2, 2, cex = 1.5)
+mtext("Proportion of matures female snow crab", 3, 1, cex = 1.5)
+box()
+
+dev.off()
 
 # Maturity anomalies figure:
-#gdevice("pdf", file = "results/figures/sGSL female snow crab maturity anomalies")
 clg()
+gdevice("pdf", file = "results/figures/sGSL SC female maturity anomalies")
 colorbar(round(seq(-4, 4, by = 0.5), 1), col = c("blue", "white", "red"),
          caption = c("logit-scale", "deviation"), smooth = TRUE)
 
@@ -75,16 +97,16 @@ box()
 dev.off()
 
 # Maturity curves overlapped:
-gdevice("pdf", file = "results/figures/sGSL female snow crab maturity curve variability")
+clg()
+gdevice("pdf", file = "results/figures/sGSL SC female maturity curves")
+p[logit.p.sd > 3] <- NA
 plot(c(20, 90), c(0, 1), xaxs = "i", yaxs = "i", xlab = "", ylab = "")
 grid()
 cols <- colorRampPalette(c("grey90", "grey60"))(length(years))
 for (i in 1:ncol(p)){
-   pp <- p[, i]
-   pp[n[, i] < 20] <- NA
-   lines(as.numeric(names(pp)), pp, lwd = 1, col = cols[i])
+   lines(as.numeric(row.names(p)), p[, i], lwd = 1, col = cols[i])
 }   
-lines(as.numeric(names(pg)), pg, lwd = 2, col = "red")
+lines(as.numeric(row.names(p)), 1 / (1 + exp(-apply(logit.p, 1, mean))),  lwd = 2, col = "red")
 mtext("Maturity proportion", 2, 2, cex = 1.5)
 mtext("Carapace width (mm)", 1, 2, cex = 1.5)
 mtext("Maturity curve variability", 3, 1, cex = 1.5)
