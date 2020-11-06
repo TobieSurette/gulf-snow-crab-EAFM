@@ -9,7 +9,7 @@ x0 <- 10:140
 p <- matrix(NA, nrow = length(x0), ncol = length(years))
 dimnames(p) <- list(cw = x0, year = years)
 pm <- p
-pars
+pars <- NULL
 for (i in 1:length(years)){
    # Read data:
    b <- read.scsbio(years[i], survey = "regular", sex = 1)
@@ -44,10 +44,22 @@ for (i in 1:length(years)){
    plot.morphometry.scsbio(x, y, theta, xlim = c(10, 140), title = years[i], discrete = years[i] < 1998)
    dev.off()
 }
+rownames(pars) <- years
 
+# Write empirical probability table:
+file <- paste0("results/tables/", "sGSL male maturity proportions - empirical.csv")
+cw <- t(t(as.numeric(rownames(p))))
+colnames(cw) <- "carapace.width"
+write.csv(cbind(cw, p), file = file, row.names = FALSE)
 
+# Write model probability table:
+file <- paste0("results/tables/", "sGSL male maturity proportions - model.csv")
+cw <- t(t(as.numeric(rownames(pm))))
+colnames(cw) <- "carapace.width"
+write.csv(cbind(cw, pm), file = file, row.names = FALSE)
 
-image(x = as.numeric(colnames(pm)), y = as.numeric(rownames(pm)), z = t(pm), ylim = c(95, 105), zlim = c(0, 0.5))
-
-
-
+# Write parameter estimates:
+file <- paste0("results/tables/", "sGSL male maturity model parameters.csv")
+tmp <- t(t(years))
+colnames(tmp) <- "year"
+write.csv(cbind(tmp, pars), file = file, row.names = FALSE)
