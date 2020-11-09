@@ -1,4 +1,4 @@
-# Mean sizes:
+# Calculate mean size annual trends:
 
 library(gulf.data)
 library(gulf.graphics)

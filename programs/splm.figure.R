@@ -19,7 +19,6 @@ k <- length(transition)
 for (i in 1:k) vv <- vv + (beta[i+1] - beta[i]) * step(xx - transition[i])
 for (i in 1:k) ll <- ll + (beta[i+1] - beta[i]) * logistic(xx - transition[i], window)
 
-
 plot(xx, vv, type = "l", lwd = 1, col = "black", ylab = "Derivative value", xaxt = "n", cex.lab = 1.25)
 lines(xx, ll, lwd = 2, col = "red")
 mtext("Derivative value", 2, 2.5, cex = 1.25)
