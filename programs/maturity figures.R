@@ -1,5 +1,4 @@
 # Maturity proportion plots:
-
 library(gulf.data)
 library(gulf.graphics)
 
