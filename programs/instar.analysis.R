@@ -5,10 +5,10 @@ library(gulf.graphics)
 b <- read.scsbio(2020, sex = 1)
 b <- b[which(!is.mature(b)), ]
 
-theta <- c(intercept = 0.25,
+theta <- c(log_intercept = log(0.25),
            transition = 38.200,
-           slope1 = c(0.349, 0.126),
-           window = 1.6,
+           log_slope = log(c(0.349, 0.126)),
+           log_window = log(1.6),
            log_sigma = -2.0)
 
 x <- seq(0, 140, by = 0.5)
@@ -33,8 +33,12 @@ loglike <- function(theta, x, fixed){
    # Convert to frequency table:
    if (is.null(x)) x <- table(x)
 
-   # Complete parameter vector.
+   # Parameter transform:
    if (!missing(fixed)) theta <- c(theta, fixed)
+   names(theta) <- tolower(names(theta))
+   ix <- grep("^log_", names(theta))
+   theta[ix] <- exp(theta[ix])
+   names(theta) <- gsub("^log_", "", names(theta))
 
    # Parse mixture proportions:
    p <- theta[grep("^p[0-9]", names(theta))]
@@ -101,19 +105,20 @@ plot.instar <- function(x, theta){
 }
 
 theta <- c(p = c(-2.28,-2.84,-1.88,-1.65,-0.04,1.55,2.68,1.82,2.34,2.47,2.97),   # Component proportions.
-           intercept = 0.25,
+           log_intercept = log(0.25),
            transition = 38.200,
-           slope1 = c(0.349, 0.126),
-           window = 1.6,
+           log_slope = log(c(0.349, 0.126)),
+           log_window = log(1.6),
            log_sigma = c(-2.5, -1.5))
 
 loglike(theta, x)
 
 v <- growth(1:120, theta = theta, error = TRUE)
-plot(1:120, v$mu, type = "l")
 
+plot(1:120, v$mu, type = "l", xlim = c(0, 120), xaxs = "i", yaxs = "i")
 lines(1:120, v$mu - v$sigma, lty = "dashed")
 lines(1:120, v$mu + v$sigma, lty = "dashed")
+
 
 growth(1:120, theta = theta)
 
@@ -143,6 +148,9 @@ fixed <- theta[c(grep("^p", names(theta)), grep("intercept", names(theta)),
                  grep("sigma", names(theta)), grep("window", names(theta)))]
 theta <- theta[-which(names(theta) %in% names(fixed))]
 loglike(theta, x, fixed = fixed)
-theta <- optim(theta, loglike, x = x, fixed = fixed, control = list(trace = 3))$par
+theta <- optim(theta, loglike, x = x, fixed = fixed, control = list(trace = 3, maxit = 5000))$par
 theta <- c(theta, fixed)
+
+
+theta <- optim(theta, loglike, x = x, control = list(trace = 3, maxit = 5000))$par
 
