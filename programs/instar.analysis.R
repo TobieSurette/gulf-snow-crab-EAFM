@@ -2,32 +2,15 @@ library(gulf.data)
 library(gulf.graphics)
 
 # Generate Instar I
-b <- read.scsbio(2020, sex = 1)
+b <- read.scsbio(1998, sex = 1)
 b <- b[which(!is.mature(b)), ]
 
-theta <- c(log_intercept = log(0.25),
-           transition = 38.200,
-           log_slope = log(c(0.349, 0.126)),
-           log_window = log(1.6),
-           log_sigma = -2.0)
+gbarplot(table(round(log(b$carapace.width), 2)), width = 0.01, xlim = c(2, 5), xaxs = "i")
+vline(2.7 -  0.35, lty = "dashed", col = "blue")
+vline(2.7 + (0:3) * 0.33, lty = "dashed", col = "red")
+vline(2.7 + 3 * 0.33 + 0.25 * 1:4, lty = "dashed", col = "green")     
 
-x <- seq(0, 140, by = 0.5)
-f <- dnorm(x, 3.15, 0.15)
-names(f) <- x
-G <- growth.matrix(as.numeric(names(f)), theta = theta)
-ff <- freq(b, step = 0.5)
-gbarplot(ff, width = 0.5, border = "grey50")
-for (i in 1:11){
-   f <- (f %*% G[names(f), ])[1, ]
-   f <- f[names(f) %in% rownames(G)]
-
-   f <-  ff[which.max(f)] * f / max(f)
-
-   lines(as.numeric(names(f)), f, lwd = 2, col = "red")
-   vline(as.numeric(names(f)[which.max(f)]), lty = "dashed", col = "red")
-}
-
-x <- freq(b, step = 0.5)
+ x <- freq(b, step = 0.5)
 
 loglike <- function(theta, x, fixed){
    # Convert to frequency table:
@@ -119,7 +102,6 @@ plot(1:120, v$mu, type = "l", xlim = c(0, 120), xaxs = "i", yaxs = "i")
 lines(1:120, v$mu - v$sigma, lty = "dashed")
 lines(1:120, v$mu + v$sigma, lty = "dashed")
 
-
 growth(1:120, theta = theta)
 
 G <- growth.matrix(1:120, theta = theta)
@@ -127,7 +109,6 @@ image(G)
 
 theta["log_sigma"] <- -1.8
 plot.instar(x, theta)
-
 
 # Estimate proportions:
 fixed <- theta[-grep("^p", names(theta))]
