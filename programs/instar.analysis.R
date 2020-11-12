@@ -8,7 +8,7 @@ b <- b[which(!is.mature(b)), ]
 gbarplot(table(round(log(b$carapace.width), 2)), width = 0.01, xlim = c(2, 5), xaxs = "i")
 vline(2.7 -  0.35, lty = "dashed", col = "blue")
 vline(2.7 + (0:3) * 0.33, lty = "dashed", col = "red")
-vline(2.7 + 3 * 0.33 + 0.25 * 1:4, lty = "dashed", col = "green")     
+vline(2.7 + 3 * 0.33 + 0.25 * 1:4, lty = "dashed", col = "green")
 
  x <- freq(b, step = 0.5)
 
@@ -32,7 +32,13 @@ loglike <- function(theta, x, fixed){
    k <- length(p)
 
    # Define growth matrix:
-   G <- growth.matrix(c(1, as.numeric(names(x))), theta = theta)
+   m <- growth(theta = theta)
+   s <- growth(theta = theta, error = TRUE)
+
+   # Calculate gamma to match moments:
+   phi <- sigma^2 / mu # Scale parameter.
+   k <- mu^2 / sigma^2 # Shape parameter.
+
 
    # Define first mixture component:
    d <- matrix(0, nrow = k, ncol = ncol(G))
@@ -43,7 +49,14 @@ loglike <- function(theta, x, fixed){
    # Iterate other components through G:
    for (i in 1:(k-1)){
       vars <- colnames(d)[colnames(d) %in% rownames(G)]
-      d[i+1, vars] <- (d[i,vars] %*% G[vars, ])[1, vars]
+
+
+      # Calculate corresponding gamma parameters:
+      phi <- s^2 / m # Scale parameter.
+      k <- m^2 / s^2 # Shape parameter.
+      d[i+1, vars] <- (d[i,vars] %*% G[vars, ])[1, vars] # Growth happens here.
+
+
       d[i+1, ] <- d[i+1, ] / sum(d[i+1, ])
    }
 
