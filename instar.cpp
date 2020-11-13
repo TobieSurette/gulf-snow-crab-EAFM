@@ -1,62 +1,64 @@
 #include <TMB.hpp>
 template<class Type> Type objective_function<Type>::operator()(){
    // Data:
-   DATA_VECTOR(x);
-   DATA_VECTOR(w);
+   DATA_VECTOR(x); // Size measurements.
+   DATA_VECTOR(f); // Frequency observations.
    
-   // Parameters:
-   PARAMETER(log_mu_0);  
-   PARAMETER(log_sigma_mu);
-   PARAMETER(log_sigma_sigma);
-   PARAMETER_VECTOR(log_sigma);
-   PARAMETER(log_mu_inc);
-   PARAMETER(log_sigma_inc);
-   PARAMETER_VECTOR(log_inc);
-   PARAMETER_VECTOR(log_p);
+   // Instar means:
+   PARAMETER(mu_instar_0);                // Size of the first instar.
+   PARAMETER_VECTOR(log_increment);       // Vector of log-scale growth increments.
+   PARAMETER(log_mu_increment);           // Log-scale mean parameter associated with instar growth increments.
+   PARAMETER(log_sigma_increment);        // Log-scale error parameter associated with instar growth increments.
+
+   // Instar errors:
+   PARAMETER(mu_log_sigma_instar);        // Instar errors log-scale mean. 
+   PARAMETER(log_sigma_log_sigma_instar); // Instar errors log-scale error. 
+   PARAMETER_VECTOR(log_sigma_instar);    // Log-scale instar error parameters.
+   
+   // Instar proportions:
+   PARAMETER_VECTOR(logit_p_instar);      // Multi-logit-scale parameters for instar proportions.
    
    // Vector sizes:      
    int n = x.size();
-   int n_instar = log_p.size() + 1;
+   int n_instar = log_sigma_instar.size();
    
    // Initialize log-likelihood:
    Type v = 0;
    
-   // Random effect for increments:
-   Type sigma_inc = exp(log_sigma_inc);
-   v += -sum(dnorm(log_inc, log_mu_inc, sigma_inc, true));
-   
-   // Mixture component proportions:
-   vector<Type> p(n_instar);
-   p[0] = 1 / (1 + sum(exp(log_p)));
+   // Instar mean sizes and growth increments:
+   vector<Type> mu_instar(n_instar);
+   mu_instar[0] = mu_instar_0;
+   Type mu_increment = exp(log_mu_increment);
+   Type sigma_increment = exp(log_sigma_increment);
    for (int j = 1; j < n_instar; j++){
-      p[j] = exp(log_p[j-1]) / (1 + sum(exp(log_p)));
+      mu_instar[j] = mu_instar[j-1] + exp(log_increment[j-1]); // Instar means.
+      v += -dnorm(mu_instar[j] - mu_instar[j-1], mu_increment, sigma_increment, true); // Growth increments.
    }
 
-   // Mixture component means:
-   vector<Type> mu(n_instar);
-   mu[0] = exp(log_mu_0);
+   // Instar standard errors:
+   v += -sum(dnorm(log_sigma_instar, mu_log_sigma_instar, exp(log_sigma_log_sigma_instar), true));
+   vector<Type> sigma_instar = exp(log_sigma_instar);
+   
+   // Instar proportions:
+   vector<Type> p_instar(n_instar);
+   p_instar[0] = 1 / (1 + sum(exp(logit_p_instar)));
    for (int j = 1; j < n_instar; j++){
-      mu[j] = mu[j-1] + exp(log_inc[j-1]);
+      p_instar[j] = exp(logit_p_instar[j-1]) / (1 + sum(exp(logit_p_instar)));
    }
-   
-   // Mixture component standard errors:
-   Type sigma_sigma = exp(log_sigma_sigma);
-   v += -sum(dnorm(log_sigma, log_sigma_mu, sigma_sigma, true));
-   vector<Type> sigma = exp(log_sigma);
-   
+
    // Mixture likelihood:
    for (int i = 0; i < n; i++){ 
       Type d = 0;
       for (int j = 0; j < n_instar; j++){
-         d += p[j] * dnorm(x[i], mu[j], sigma[j], false); 
+         d += p_instar[j] * dnorm(x[i], mu_instar[j], sigma_instar[j], false); 
       }
-      v += -w[i] * log(d);
+      v += -f[i] * log(d);
    }
    
    // Export parameters:
-   REPORT(p);
-   REPORT(mu);
-   REPORT(sigma);
+   REPORT(mu_instar);
+   REPORT(sigma_instar);
+   REPORT(p_instar);
    
    return v;
 }
