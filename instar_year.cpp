@@ -12,16 +12,18 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER(log_sigma_increment);        // Log-scale error parameter associated with instar growth increments.
    PARAMETER_VECTOR(mu_year);             // Annual deviations.
    PARAMETER(log_sigma_mu_year);          // Log-scale error for annual instar mean deviations.
-      
+   PARAMETER_VECTOR(mu_instar_year);
+   PARAMETER(log_sigma_mu_instar_year);  
+   
    // Instar errors:
    PARAMETER(mu_log_sigma_instar);        // Instar errors log-scale mean. 
    PARAMETER(log_sigma_log_sigma_instar); // Instar errors log-scale error.
    PARAMETER_VECTOR(log_sigma_instar);    // Log-scale instar error parameters.
    
    // Instar proportions:
-   PARAMETER(mu_logit_p);                 // Instar proportions log-scale mean parameter.
-   PARAMETER(log_sigma_logit_p);          // Instar proportions log-scale error parameter.
-   PARAMETER_MATRIX(logit_p_instar_year); // Multi-logit-scale parameters for instar proportions by year.
+   PARAMETER(mu_logit_p);                    // Instar proportions log-scale mean parameter.
+   PARAMETER(log_sigma_logit_p_instar_year); // Instar proportions log-scale error parameter.
+   PARAMETER_VECTOR(logit_p_instar_year);    // Proportion deviations by instar and year.
 
    // Vector sizes:      
    int n = x.size();
@@ -43,11 +45,12 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Year effect:
    Type sigma_mu_year = exp(log_sigma_mu_year);
    v += -sum(dnorm(mu_year, 0, sigma_mu_year, true)); // Instar mean year effect.
+   v += -sum(dnorm(mu_instar_year, 0, exp(log_sigma_mu_instar_year), true));
    // Instar mean matrix:
-   matrix<Type> mu_instar_year(n_instar,n_year);
+   matrix<Type> mu(n_instar,n_year);
    for (int i = 0; i < n_year; i++){
       for (int j = 0; j < n_instar; j++){
-         mu_instar_year(j,i) =  mu_instar[j] + mu_year[i];
+         mu(j,i) =  mu_instar[j] + mu_year[i] + mu_instar_year[j * n_year + i];
       }
    }   
 
@@ -56,20 +59,23 @@ template<class Type> Type objective_function<Type>::operator()(){
    vector<Type> sigma_instar = exp(log_sigma_instar);
    
    // Instar proportions:
-   Type sigma_logit_p = exp(log_sigma_logit_p);
+   v += -sum(dnorm(logit_p_instar_year, 0, exp(log_sigma_logit_p_instar_year), true));
+   
+   matrix<Type> p(n_instar,n_year);
    vector<Type> sum_logit_p(n_year);
+   matrix<Type> logit_p(n_instar-1,n_year);
    for (int i = 0; i < n_year; i++){
       sum_logit_p[i] = 0;
       for (int j = 1; j < n_instar; j++){
-         v += -dnorm(logit_p_instar_year(j-1,i), mu_logit_p, sigma_logit_p, true); // Proportions random effect.
-         sum_logit_p[i] += exp(logit_p_instar_year(j-1,i));
+          // Proportions random effect.
+         logit_p(j-1,i) = mu_logit_p + logit_p_instar_year[(j-1) * n_year + i];
+         sum_logit_p[i] += exp(logit_p(j-1,i));
       }
    }
-   matrix<Type> p_instar_year(n_instar,n_year);
    for (int i = 0; i < n_year; i++){
-      p_instar_year(0,i) = 1 / (1 + sum_logit_p[i]);
+      p(0,i) = 1 / (1 + sum_logit_p[i]);
       for (int j = 1; j < n_instar; j++){
-         p_instar_year(j,i) = exp(logit_p_instar_year(j-1,i)) / (1 + sum_logit_p[i]);
+         p(j,i) = exp(logit_p(j-1,i)) / (1 + sum_logit_p[i]); // Proportions by instar and year.
       }
    }
    
@@ -77,17 +83,17 @@ template<class Type> Type objective_function<Type>::operator()(){
    for (int i = 0; i < n; i++){ 
       Type d = 0;
       for (int j = 0; j < n_instar; j++){
-         d += p_instar_year(j,year[i]) * dnorm(x[i], mu_instar_year(j,year[i]), sigma_instar[j], false); 
+         d += p(j,year[i]) * dnorm(x[i], mu(j,year[i]), sigma_instar[j], false); 
       }
       v += -f[i] * log(d);
    }
    
    // Export parameters:
-   //REPORT(mu_instar);
-   //REPORT(mu_year);
-   //REPORT(mu_instar_year);
-   //REPORT(sigma_instar);
-   //REPORT(p_instar_year);
+   REPORT(mu_instar);
+   REPORT(mu_year);
+   REPORT(mu);
+   REPORT(sigma_instar);
+   REPORT(p);
    
    return v;
 }
