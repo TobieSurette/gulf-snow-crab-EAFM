@@ -10,16 +10,14 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(log_increment);       // Vector of log-scale growth increments.
    PARAMETER(log_mu_increment);           // Log-scale mean parameter associated with instar growth increments.
    PARAMETER(log_sigma_increment);        // Log-scale error parameter associated with instar growth increments.
-   PARAMETER_VECTOR(mu_year);             // Annual deviations.
-   PARAMETER(log_sigma_mu_year);          // Log-scale error for annual instar mean deviations.
    PARAMETER_VECTOR(mu_instar_year);
    PARAMETER(log_sigma_mu_instar_year);  
    
    // Instar errors:
-   PARAMETER(mu_log_sigma_instar);        // Instar errors log-scale mean. 
-   PARAMETER(log_sigma_log_sigma_instar); // Instar errors log-scale error.
-   PARAMETER_VECTOR(log_sigma_instar);    // Log-scale instar error parameters.
-   
+   PARAMETER_VECTOR(log_sigma_instar);         // Log-scale instar error parameters.
+   PARAMETER(log_sigma_log_sigma_instar_year); // Log-scale instar x year error meta-parameter. 
+   PARAMETER_VECTOR(log_sigma_instar_year);    // Log-scale instar x year error parameters.
+
    // Instar proportions:
    PARAMETER(mu_logit_p);                    // Instar proportions log-scale mean parameter.
    PARAMETER(log_sigma_logit_p_instar_year); // Instar proportions log-scale error parameter.
@@ -28,7 +26,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Vector sizes:      
    int n = x.size();
    int n_instar = log_sigma_instar.size();
-   int n_year = mu_year.size();
+   int n_year = mu_instar_year.size() / n_instar;
    
    // Initialize log-likelihood:
    Type v = 0;
@@ -42,25 +40,27 @@ template<class Type> Type objective_function<Type>::operator()(){
       mu_instar[j] = mu_instar[j-1] + exp(log_increment[j-1]); // Instar means.
       v += -dnorm(mu_instar[j] - mu_instar[j-1], mu_increment, sigma_increment, true); // Random effect on instar increments.
    }
-   // Year effect:
-   Type sigma_mu_year = exp(log_sigma_mu_year);
-   v += -sum(dnorm(mu_year, 0, sigma_mu_year, true)); // Instar mean year effect.
-   v += -sum(dnorm(mu_instar_year, 0, exp(log_sigma_mu_instar_year), true));
-   // Instar mean matrix:
+   v += -sum(dnorm(mu_instar_year, 0, exp(log_sigma_mu_instar_year), true)); // Instar x year effect.
    matrix<Type> mu(n_instar,n_year);
    for (int i = 0; i < n_year; i++){
       for (int j = 0; j < n_instar; j++){
-         mu(j,i) =  mu_instar[j] + mu_year[i] + mu_instar_year[j * n_year + i];
+         mu(j,i) =  mu_instar[j] + mu_instar_year[j * n_year + i]; // Instar mean matrix:
       }
    }   
 
    // Instar standard errors:
-   v += -sum(dnorm(log_sigma_instar, mu_log_sigma_instar, exp(log_sigma_log_sigma_instar), true));
+   v += -sum(dnorm(log_sigma_instar_year, 0, exp(log_sigma_log_sigma_instar_year), true));
+   matrix<Type> sigma(n_instar,n_year);
    vector<Type> sigma_instar = exp(log_sigma_instar);
+   vector<Type> sigma_instar_year = exp(log_sigma_instar_year);
+   for (int i = 0; i < n_year; i++){
+      for (int j = 0; j < n_instar; j++){
+         sigma(j,i) =  exp(log_sigma_instar[j] + log_sigma_instar_year[j * n_year + i]); // Instar sigma matrix:
+      }
+   }   
    
    // Instar proportions:
    v += -sum(dnorm(logit_p_instar_year, 0, exp(log_sigma_logit_p_instar_year), true));
-   
    matrix<Type> p(n_instar,n_year);
    vector<Type> sum_logit_p(n_year);
    matrix<Type> logit_p(n_instar-1,n_year);
@@ -83,16 +83,18 @@ template<class Type> Type objective_function<Type>::operator()(){
    for (int i = 0; i < n; i++){ 
       Type d = 0;
       for (int j = 0; j < n_instar; j++){
-         d += p(j,year[i]) * dnorm(x[i], mu(j,year[i]), sigma_instar[j], false); 
+         d += p(j,year[i]) * dnorm(x[i], mu(j,year[i]), sigma(j,year[i]), false); 
       }
       v += -f[i] * log(d);
    }
    
    // Export parameters:
-   REPORT(mu_instar);
-   REPORT(mu_year);
    REPORT(mu);
+   REPORT(mu_instar);
+   REPORT(mu_instar_year);
+   REPORT(sigma);
    REPORT(sigma_instar);
+   REPORT(sigma_instar_year);
    REPORT(p);
    
    return v;
