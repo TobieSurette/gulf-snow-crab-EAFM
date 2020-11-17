@@ -33,7 +33,7 @@ plot.instar.year <- function(obj, data){
       if (i == 16) mtext("ln(cw)", 1, 2.5, cex = 1.25)
       
       # Year label:
-      text(par("usr")[1] + 0.1 * diff(par("usr")[1:2]), par("usr")[3] + 0.85 * diff(par("usr")[3:4]), years[i], cex = 1.2)
+      text(par("usr")[1] + 0.1 * diff(par("usr")[1:2]), par("usr")[3] + 0.85 * diff(par("usr")[3:4]), years[i], cex = 0.8)
       
       box()
    }

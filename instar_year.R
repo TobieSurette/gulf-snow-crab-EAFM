@@ -26,9 +26,6 @@ if (b$sex[1] == "2"){
 } 
 b$year <- year(b)
 
-gbarplot(log(table(round(log(b$carapace.width),2))+1), width = 0.01, border = "grey50")
-vline(log(mu_instars))
-
 # Set up data:
 r <- aggregate(list(f = b$year), list(x = round(log(b$carapace.width), 2), year = b$year), length)
 data <- list(x = r$x, f = r$f, year = r$year - min(r$year))
@@ -67,7 +64,8 @@ theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-   
+
+# Estimate parameters: 
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
                  random = c("log_increment", "mu_instar_year", "log_sigma_instar_year", "logit_p_instar_year"),
                  map = list(mu_instar_0 = factor(NA), 
@@ -75,14 +73,13 @@ obj <- MakeADFun(data, parameters, DLL = "instar_year",
                             log_sigma_mu_instar_year = factor(NA),
                             mu_instar_year = factor(rep(NA, length(parameters$mu_instar_year))),
                             log_sigma_log_sigma_instar_year = factor(NA),
-                            log_sigma_instar_year = factor(rep(NA, length(parameters$log_sigma_instar_year))))
-                 ) 
-   
-# Estimate parameters:
+                            log_sigma_instar_year = factor(rep(NA, length(parameters$log_sigma_instar_year))))) 
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
+
+plot.instar.year(obj, data)
 
 # Estimate parameters:
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
@@ -96,8 +93,22 @@ obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
 
+plot.instar.year(obj, data)
+
+# Estimate parameters:
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
-                 random = c("mu_year", "mu_instar_year", "log_sigma_instar", "log_increment", "logit_p_instar_year"))
+                 random = c("log_increment", "mu_instar_year", "log_sigma_instar_year", "logit_p_instar_year"),
+                 map = list(log_sigma_log_sigma_instar_year = factor(NA),
+                            log_sigma_instar_year = factor(rep(NA, length(parameters$log_sigma_instar_year)))))
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+obj$par <- theta
+rep <- sdreport(obj)
+parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
+
+plot.instar.year(obj, data)
+
+obj <- MakeADFun(data, parameters, DLL = "instar_year", 
+                 random = c("log_increment", "mu_instar_year", "log_sigma_instar_year", "logit_p_instar_year"))
 
 
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
@@ -105,13 +116,35 @@ obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
 
+plot.instar.year(obj, data)
 
-
-mu_instar_year <- phi[grep("mu_instar_year", rownames(phi)), 1]
+mu_instar_year <- obj$report()$mu_instar_year
 dim(mu_instar_year) <- c(length(years), length(mu_instars))
 dimnames(mu_instar_year) <- list(year = years, instar = names(mu_instars))
 
-image(years, as.numeric(names(mu_instars)), mu_instar_year, breaks = seq(-0.25, 0.25, len = 101), col = colorRampPalette(c("red", "white", "blue"))(100))
+# Instar proportions:
+p <- obj$report()$p
+dimnames(p) <- list(instar = names(mu_instars), year = years)
+image(years, as.numeric(names(mu_instars)), t(p), ylab = "Instar")
+
+# Instar standard errors:
+sigma <- obj$report()$sigma
+dimnames(p) <- list(instar = names(mu_instars), year = years)
+image(years, as.numeric(names(mu_instars)), t(sigma), ylab = "Instar")
+
+sigma_instar_year <- obj$report()$sigma_instar_year
+dim(sigma_instar_year) <- c(length(years), length(mu_instars))
+dimnames(sigma_instar_year) <- list(year = years, instar = names(mu_instars))
+image(years, as.numeric(names(mu_instars)), 
+      log(sigma_instar_year), breaks = seq(-0.25, 0.25, len = 101), 
+      col = colorRampPalette(c("red", "white", "blue"))(100), 
+      ylab = "Year")
+
+
+image(years, as.numeric(names(mu_instars)), 
+      mu_instar_year, breaks = seq(-0.25, 0.25, len = 101), 
+      col = colorRampPalette(c("red", "white", "blue"))(100), 
+      ylab = "Year")
 
 clg()
 mu <- obj$report()$mu
@@ -133,6 +166,8 @@ image(years, as.numeric(names(mu_instars)), t(dmu),
       col = colorRampPalette(c("red", "white", "blue"))(100),
       xlab = "Years", ylab = "Instar")
 box()
+
+
 
 
 
