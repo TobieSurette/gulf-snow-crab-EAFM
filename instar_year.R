@@ -37,11 +37,9 @@ parameters <- list(mu_instar_0 = as.numeric(log(mu_instars[1])),   # Mean size o
                    log_sigma_increment = -3.42,        # Log-scale error parameter associated with instar growth increments.
                    log_sigma_mu_instar_year = -4, 
                    mu_instar_year = rep(0, length(mu_instars) * length(years)), 
-                   
-                   log_sigma_instar = rep(-2.41, length(mu_instars)),   # Log-scale instar error parameters.
+                   beta_log_sigma_instar = c(-2.67067, 0.09134),   # Log-scale instar error parameters.
                    log_sigma_log_sigma_instar_year = -4,
                    log_sigma_instar_year = rep(0, length(mu_instars) * length(years)), 
-                   
                    mu_logit_p = 4,                     # Instar proportions log-scale mean parameter.
                    log_sigma_logit_p_instar_year = -1, # Instar proportions log-scale error parameter.
                    logit_p_instar_year = rep(0, (length(mu_instars)-1) * length(years))) # Multi-logit-scale parameters for instar proportions by year.
@@ -50,7 +48,7 @@ obj <- MakeADFun(data, parameters, DLL = "instar_year",
                  random = c("log_increment", "mu_instar_year", "log_sigma_instar_year", "logit_p_instar_year"),
                  map = list(mu_instar_0 = factor(NA), 
                             log_increment = factor(rep(NA, length(parameters$log_increment))),
-                            log_sigma_instar = factor(rep(NA, length(parameters$log_sigma_instar))),
+                            beta_log_sigma_instar = factor(rep(NA, length(parameters$beta_log_sigma_instar))),
                             log_sigma_mu_instar_year = factor(NA),
                             mu_instar_year = factor(rep(NA, length(parameters$mu_instar_year))),
                             log_sigma_log_sigma_instar_year = factor(NA),
@@ -74,43 +72,26 @@ obj <- MakeADFun(data, parameters, DLL = "instar_year",
                             mu_instar_year = factor(rep(NA, length(parameters$mu_instar_year))),
                             log_sigma_log_sigma_instar_year = factor(NA),
                             log_sigma_instar_year = factor(rep(NA, length(parameters$log_sigma_instar_year))))) 
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
 
-plot.instar.year(obj, data)
-
-# Estimate parameters:
-obj <- MakeADFun(data, parameters, DLL = "instar_year", 
-                 random = c("log_increment", "mu_instar_year", "log_sigma_instar_year", "logit_p_instar_year"),
-                 map = list(mu_instar_0 = factor(NA), 
-                            log_increment = factor(rep(NA, length(parameters$log_increment))),
-                            log_sigma_log_sigma_instar_year = factor(NA),
-                            log_sigma_instar_year = factor(rep(NA, length(parameters$log_sigma_instar_year)))))
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
-obj$par <- theta
-rep <- sdreport(obj)
-parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-
-plot.instar.year(obj, data)
-
-# Estimate parameters:
+# Estimate parameters: 
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
                  random = c("log_increment", "mu_instar_year", "log_sigma_instar_year", "logit_p_instar_year"),
                  map = list(log_sigma_log_sigma_instar_year = factor(NA),
-                            log_sigma_instar_year = factor(rep(NA, length(parameters$log_sigma_instar_year)))))
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+                            log_sigma_instar_year = factor(rep(NA, length(parameters$log_sigma_instar_year))))) 
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
 
 plot.instar.year(obj, data)
 
+
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
                  random = c("log_increment", "mu_instar_year", "log_sigma_instar_year", "logit_p_instar_year"))
-
-
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
@@ -129,8 +110,11 @@ image(years, as.numeric(names(mu_instars)), t(p), ylab = "Instar")
 
 # Instar standard errors:
 sigma <- obj$report()$sigma
-dimnames(p) <- list(instar = names(mu_instars), year = years)
+dimnames(sigma) <- list(instar = names(mu_instars), year = years)
 image(years, as.numeric(names(mu_instars)), t(sigma), ylab = "Instar")
+
+
+plot(apply(mu, 1, mean), apply(sigma, 1, mean))
 
 sigma_instar_year <- obj$report()$sigma_instar_year
 dim(sigma_instar_year) <- c(length(years), length(mu_instars))

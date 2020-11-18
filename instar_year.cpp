@@ -14,7 +14,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER(log_sigma_mu_instar_year);  
    
    // Instar errors:
-   PARAMETER_VECTOR(log_sigma_instar);         // Log-scale instar error parameters.
+   PARAMETER_VECTOR(beta_log_sigma_instar);   // Exponential intercept and slope parameters for log-scale instar errors.
    PARAMETER(log_sigma_log_sigma_instar_year); // Log-scale instar x year error meta-parameter. 
    PARAMETER_VECTOR(log_sigma_instar_year);    // Log-scale instar x year error parameters.
 
@@ -25,7 +25,7 @@ template<class Type> Type objective_function<Type>::operator()(){
 
    // Vector sizes:      
    int n = x.size();
-   int n_instar = log_sigma_instar.size();
+   int n_instar = log_increment.size() + 1;
    int n_year = mu_instar_year.size() / n_instar;
    
    // Initialize log-likelihood:
@@ -48,14 +48,21 @@ template<class Type> Type objective_function<Type>::operator()(){
       }
    }   
 
-   // Instar standard errors:
-   v += -sum(dnorm(log_sigma_instar_year, 0, exp(log_sigma_log_sigma_instar_year), true));
+   // Instar standard errors:   
+   vector<Type> log_sigma_instar(n_instar);  
+   for (int j = 0; j < n_instar; j++){
+      log_sigma_instar[j] = beta_log_sigma_instar[0] + beta_log_sigma_instar[1] * j;
+   }
    matrix<Type> sigma(n_instar,n_year);
    vector<Type> sigma_instar = exp(log_sigma_instar);
    vector<Type> sigma_instar_year = exp(log_sigma_instar_year);
    for (int i = 0; i < n_year; i++){
       for (int j = 0; j < n_instar; j++){
-         sigma(j,i) =  exp(log_sigma_instar[j] + log_sigma_instar_year[j * n_year + i]); // Instar sigma matrix:
+         // Instar error random effect, scales with instar mean size:
+         v -= dnorm(log_sigma_instar_year[j * n_year + i], Type(0), mu_instar[j] * exp(log_sigma_log_sigma_instar_year), true); 
+         
+         // Instar sigma matrix:
+         sigma(j,i) = exp(log_sigma_instar[j] + log_sigma_instar_year[j * n_year + i]); 
       }
    }   
    
@@ -67,9 +74,8 @@ template<class Type> Type objective_function<Type>::operator()(){
    for (int i = 0; i < n_year; i++){
       sum_logit_p[i] = 0;
       for (int j = 1; j < n_instar; j++){
-          // Proportions random effect.
-         logit_p(j-1,i) = mu_logit_p + logit_p_instar_year[(j-1) * n_year + i];
-         sum_logit_p[i] += exp(logit_p(j-1,i));
+         logit_p(j-1,i) = mu_logit_p + logit_p_instar_year[(j-1) * n_year + i]; // Proportions random effect.
+         sum_logit_p[i] += exp(logit_p(j-1,i)); // Normalizing constants.
       }
    }
    for (int i = 0; i < n_year; i++){
