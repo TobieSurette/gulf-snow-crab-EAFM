@@ -2,7 +2,7 @@ library(TMB)
 library(gulf.data)
 library(gulf.graphics)
 
-category <- "FI"
+category <- "MI"
 years  <- 1998:2020
 mu_instars <- c(10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
 names(mu_instars) <- 4:11
@@ -55,13 +55,14 @@ obj <- MakeADFun(data, parameters, DLL = "instar_year",
                             log_sigma_instar_year = factor(rep(NA, length(parameters$log_sigma_instar_year))))
                  ) 
    
-plot.instar.year(obj, data)
+
 
 # Estimate parameters:
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
+plot.instar.year(obj, data)
 
 # Estimate parameters: 
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
