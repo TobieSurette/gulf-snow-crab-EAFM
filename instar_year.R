@@ -77,6 +77,7 @@ theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
+plot.instar.year(obj, data)
 
 # Estimate parameters: 
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
@@ -87,7 +88,6 @@ theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-
 plot.instar.year(obj, data)
 
 
@@ -135,10 +135,11 @@ clg()
 mu <- obj$report()$mu
 dimnames(mu) <- list(names(mu_instars), years)
 
-plot(range(years), c(10, 55), type = "n", xlab = "Years", ylab = "Carapace width (mm)")
-for (i in 1:length(years)){
-   points(rep(years[i], nrow(mu)), exp(mu[, i]))
-}
+plot(range(years), c(10, 95), type = "n", xlab = "Years", ylab = "Carapace width (mm)")
+cols <- rainbow(nrow(mu))
+grid()
+for (i in 1:nrow(mu)) lines(years, exp(mu[i, ]), lwd = 2, col = cols[i])
+text(rep(2009, nrow(mu)), exp(mu[, "2009"]), roman[as.numeric(rownames(mu))])
 
 
 dmu <- exp(mu) - repvec(apply(exp(mu), 1, mean), ncol = ncol(mu))
