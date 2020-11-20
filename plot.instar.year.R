@@ -1,3 +1,24 @@
+plot.instar <- function(obj, data, xlim = c(10, 140)){
+   clg()
+   dev.new(width = 8.5, height = 11)
+   m <- s <- p <- NULL
+
+   gbarplot(data$f, data$x, border = "grey50", width = 0.01, xlim = xlim, xaxs = "i", xaxt = "n", yaxt = "n", lwd = 0.5)
+   grid()
+   x0 <- seq(0, 5, len = 1000)
+   d <- rep(0, length(x0))
+   for (j in 1:data$n_instar){
+      lines(x0, 0.01 * obj$report()$p[j] * sum(data$f) * dnorm(x0, obj$report()$mu[j], obj$report()$sigma[j]), lwd = 0.5, lty = "dashed", col = "blue")
+      d  <- d + 0.01 * obj$report()$p[j] * sum(data$f) * dnorm(x0, obj$report()$mu[j], obj$report()$sigma[j]) 
+   }
+   lines(x0, d, col = "blue", lwd = 0.5)
+      
+   vline(obj$report()$mu, col = "blue", lwd = 0.5)
+   mtext("Frequency", 2, 2.5, cex = 1.25, at = 0)
+   mtext("Carapace width(mm)", 1, 2.5, cex = 1.25)
+   box()
+}
+
 plot.instar.year <- function(obj, data, xlim = c(2.0, 5), ylim = c(0, 200)){
    clg()
    dev.new(width = 8.5, height = 11)
