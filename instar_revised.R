@@ -83,7 +83,7 @@ dyn.load(dynlib("instar_revised"))
    parameters$logit_p_instar      <- as.numeric(theta[grep("logit_p_instar", names(theta))])
    parameters$log_hiatt_slope     <- as.numeric(theta[grep("log_hiatt_slope", names(theta))])
    parameters$log_hiatt_intercept <- as.numeric(theta[grep("log_hiatt_intercept", names(theta))])
-   parameters$log_growth_error    <- as.numeric(theta[grep("llog_growth_error", names(theta))])
+   parameters$log_growth_error    <- as.numeric(theta[grep("log_growth_error", names(theta))])
    
    clg()
    dev.new(width = 8.5, height = 11)
