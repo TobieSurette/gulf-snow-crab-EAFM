@@ -4,20 +4,22 @@ template<class Type> Type objective_function<Type>::operator()(){
    DATA_IVECTOR(tow);      // Tow identifiers.
    DATA_VECTOR(x);         // Size measurements.
    DATA_VECTOR(f);         // Frequency observations.
-   DATA_INTEGER(n_instar); // Number of instars.
-   
+
    // Parameters:                       
-   PARAMETER(mu0);                        // First instar mean size.
-   PARAMETER(log_sigma0);                 // Log-scale standard error for first instar.
-   PARAMETER_VECTOR(log_hiatt_slope);     // Hiatt slope parameters.
-   PARAMETER_VECTOR(log_hiatt_intercept); // Hiatt intercept parameters.
-   PARAMETER_VECTOR(log_growth_error);    // Growth increment error inflation parameters.
-   PARAMETER_VECTOR(logit_p_instar);      // Multi-logit-scale parameters for instar proportions.
-   PARAMETER_VECTOR(logit_p_instar_tow);  // Multi-logit-scale parameters for tow-level proportions variation.
+   PARAMETER(mu0);                          // First instar mean size.
+   PARAMETER(log_sigma0);                   // Log-scale standard error for first instar.
+   PARAMETER_VECTOR(log_hiatt_slope);       // Hiatt slope parameters.
+   PARAMETER_VECTOR(log_hiatt_intercept);   // Hiatt intercept parameters.
+   PARAMETER_VECTOR(log_growth_error);      // Growth increment error inflation parameters.
+   PARAMETER_VECTOR(logit_p_instar);        // Multi-logit-scale parameters for instar proportions (n_instar-1).
+   PARAMETER(log_sigma_logit_p_instar_tow); // Log-scale standard error for tow-level proportions variation.
+   PARAMETER_VECTOR(logit_p_instar_tow);    // Multi-logit-scale parameters for tow-level proportions variation.
    
    // Vector sizes:      
-   int n = x.size();
-   
+   int n = x.size();                                       // Number of data elements.
+   int n_instar = logit_p_instar.size() + 1;               // Number instars in model.
+   int n_tow = logit_p_instar_tow.size() / (n_instar - 1); // Number of tows.
+      
    // Calculate instar means and errors:
    vector<Type> mu(n_instar);
    vector<Type> log_sigma(n_instar);
@@ -36,37 +38,49 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Initialize log-likelihood:
    Type v = 0;
    
-   
-   n_tow  
+   // Logit-scale proportions:
    v -= sum(dnorm(logit_p_instar_tow, 0, exp(log_sigma_logit_p_instar_tow), true));  // Tow-level random effect.
+   matrix<Type> logit_p(n_instar-1, n_tow);
    for (int t = 0; t < n_tow; t++){ 
       for (int j = 1; j < n_instar; j++){
-         logit_p(j,t) = logit_p_instar[j-1] + logit_p_instar_tow(t * n_instar + j - 1)
+         logit_p(j-1,t) = logit_p_instar[j-1] + logit_p_instar_tow[t * (n_instar-1) + j-1];
       }  
    }
    
-   // Instar proportions:
-   vector<Type> p(n_instar,n_tow);
+   // Calculate instar proportions:
+   vector<Type> p_sum(n_tow);
    for (int t = 0; t < n_tow; t++){
-      p(0,t) = 1 / (1 + logit_p.col(t).sum());
+      p_sum[t] = 0;
+      for (int j = 1; j < n_instar; j++){
+         p_sum[t] += exp(logit_p(j-1,t));
+      }
    }
-   for (int j = 1; j < n_instar; j++){
-      p(j,t) = exp(logit_p.col(j-1,t)) / (1 + logit_p.col(t).sum());
+   matrix<Type> p(n_instar,n_tow);
+   for (int t = 0; t < n_tow; t++){
+      p(0,t) = 1 / (1 + p_sum[t]);
+      for (int j = 1; j < n_instar; j++){
+         p(j,t) = exp(logit_p(j-1,t)) / (1 + p_sum[t]);
+      }
    }
    
    // Mixture likelihood:
    for (int i = 0; i < n; i++){ 
       Type d = 0;
       for (int j = 0; j < n_instar; j++){
-         d += p[j] * dnorm(x[i], mu[j], sigma[j], false); 
+         d += p(j,tow[i]) * dnorm(x[i], mu[j], sigma[j], false); 
       }
       v -= f[i] * log(d);
    }
    
+   // Convert to frequencies, apply instar-length key to tow length-frequencies and accumulate to obstain instar-frequency matrix:
+   // Standardize tows by swept area.
+   
+      
    // Export instar stats:
    REPORT(mu);
    REPORT(sigma);
    REPORT(p);
+   
    
    return v;
 }
