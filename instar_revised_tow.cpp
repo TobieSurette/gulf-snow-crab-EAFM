@@ -75,12 +75,21 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Convert to frequencies, apply instar-length key to tow length-frequencies and accumulate to obstain instar-frequency matrix:
    // Standardize tows by swept area.
    
-      
+
+   // Calculate average density of each instar:
+   vector<Type> abundance_instar(n_instar);
+   for (int i = 0; i < n_instar; i++){
+      abundance_instar[i] = 0;
+      for (int j = 0; j < n; j++){
+         abundance_instar[i] += (1 / n_tow) * p(j,tow[j]) * 1000000 * (f[j] / swept_area[j]); // Number per km2.
+      }
+   }   
+   
    // Export instar stats:
    REPORT(mu);
    REPORT(sigma);
    REPORT(p);
-   
+   REPORT(abundance_instar);
    
    return v;
 }
