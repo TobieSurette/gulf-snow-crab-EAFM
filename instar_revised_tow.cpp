@@ -1,10 +1,11 @@
 #include <TMB.hpp>
 template<class Type> Type objective_function<Type>::operator()(){
    // Data:
-   DATA_IVECTOR(tow);      // Tow identifiers.
-   DATA_VECTOR(x);         // Size measurements.
-   DATA_VECTOR(f);         // Frequency observations.
-
+   DATA_VECTOR(x);          // Size measurements.
+   DATA_VECTOR(f);          // Frequency observations.
+   DATA_IVECTOR(tow);       // Tow identifiers.
+   DATA_VECTOR(swept_area); // Tow swept area (n_tow).
+   
    // Parameters:                       
    PARAMETER(mu0);                          // First instar mean size.
    PARAMETER(log_sigma0);                   // Log-scale standard error for first instar.
@@ -18,7 +19,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Vector sizes:      
    int n = x.size();                                       // Number of data elements.
    int n_instar = logit_p_instar.size() + 1;               // Number instars in model.
-   int n_tow = logit_p_instar_tow.size() / (n_instar - 1); // Number of tows.
+   int n_tow = swept_area.size();                          // Number of tows.
       
    // Calculate instar means and errors:
    vector<Type> mu(n_instar);
@@ -30,7 +31,7 @@ template<class Type> Type objective_function<Type>::operator()(){
       log_sigma[i] = log(1 + exp(log_hiatt_slope[0]) + exp(log_growth_error[0])) + log_sigma[i-1];
    }
    for (int i = 5; i < n_instar; i++){
-      mu[i] = exp(log_hiatt_intercept[1]) + + mu[i-1] + exp(log_hiatt_slope[1]) * mu[i-1];
+      mu[i] = exp(log_hiatt_intercept[1]) + mu[i-1] + exp(log_hiatt_slope[1]) * mu[i-1];
       log_sigma[i] = log(1 + exp(log_hiatt_slope[1]) + exp(log_growth_error[1])) + log_sigma[i-1];
    }
    vector<Type> sigma = exp(log_sigma);
@@ -72,18 +73,15 @@ template<class Type> Type objective_function<Type>::operator()(){
       v -= f[i] * log(d);
    }
    
-   // Convert to frequencies, apply instar-length key to tow length-frequencies and accumulate to obstain instar-frequency matrix:
-   // Standardize tows by swept area.
-   
-
    // Calculate average density of each instar:
    vector<Type> abundance_instar(n_instar);
    for (int i = 0; i < n_instar; i++){
       abundance_instar[i] = 0;
       for (int j = 0; j < n; j++){
-         abundance_instar[i] += (1 / n_tow) * p(j,tow[j]) * 1000000 * (f[j] / swept_area[j]); // Number per km2.
+         abundance_instar[i] += (Type(1) / n_tow) * p(i,tow[j]) * 1000000 * f[j] / swept_area[tow[j]]; // Number per km2.
       }
    }   
+   
    
    // Export instar stats:
    REPORT(mu);
