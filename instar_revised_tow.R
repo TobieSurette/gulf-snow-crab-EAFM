@@ -50,9 +50,9 @@ data$swept_area <- s$swept.area
 # Define initial parameters:
 parameters <- list(mu0 = 10,              # First instar mean size.
                    log_sigma0 = log(0.8), # Log-scale standard error for first instar.
-                   log_hiatt_slope     = log(c(0.350, 0.070)), # Hiatt slope parameters.
+                   log_hiatt_slope     = log(c(0.350, 0.0920)), # Hiatt slope parameters.
                    log_hiatt_intercept = log(c(0.689, 8.000)), # Hiatt intercept parameters.
-                   log_growth_error    = log(c(0.0, 0.20)),   # Growth increment error inflation parameters
+                   log_growth_error    = log(c(0.01, 0.10)),   # Growth increment error inflation parameters
                    logit_p_instar      = rep(4.5, n_instar-1),
                    log_sigma_logit_p_instar_tow = -2,
                    logit_p_instar_tow = rep(0, (n_instar-1)*(max(data$tow)+1)))
@@ -76,6 +76,15 @@ plot.instar(as.numeric(names(t)), as.numeric(t),
             mu = obj$report()$mu, 
             sigma = obj$report()$sigma)
 
+# Add error parameters:
+map$log_sigma0 = factor(1)
+map$log_growth_error = factor(c(1, 2))
+obj <- MakeADFun(data, parameters, DLL = "instar_revised_tow", map = map, random = "logit_p_instar_tow") 
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 5000))$par
+obj$par <- theta
+parameters$log_sigma0          <- as.numeric(theta[grep("log_sigma0", names(theta))])
+parameters$logit_p_instar      <- as.numeric(theta[grep("logit_p_instar", names(theta))])
+parameters$log_growth_error    <- as.numeric(theta[grep("log_growth_error", names(theta))])
 
 # Add growth parameters:
 map$log_hiatt_slope = factor(c(1, 2))
@@ -90,7 +99,7 @@ parameters$log_hiatt_intercept <- theta[grep("log_hiatt_intercept", names(theta)
 # Add initial instar mean:
 map$mu0 = factor(1)
 obj <- MakeADFun(data, parameters, DLL = "instar_revised_tow", map = map, random = "logit_p_instar_tow") 
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 100))$par
 obj$par <- theta
 parameters$mu0                 <- as.numeric(theta[grep("mu0", names(theta))])
 parameters$logit_p_instar      <- as.numeric(theta[grep("logit_p_instar", names(theta))])
