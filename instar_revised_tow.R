@@ -5,13 +5,37 @@ library(gulf.graphics)
 
 category <- "MI"
 years  <- 2019
-n_instar <- 9
+n_instar <- 10
 
 # Work computer fix:
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:/Rtools/mingw_64/bin/")
 
 compile("instar_revised_tow.cpp")
 dyn.load(dynlib("instar_revised_tow"))
+
+plot.instar <- function(x, f, p, mu, sigma, xlim = c(0, 120), n_instar = 9){
+   n_instar <- length(mu)
+   clg()
+   dev.new(width = 8.5, height = 11)
+   w <- min(diff(sort(unique(x))))
+   gbarplot(f, x, border = "grey60", col = "grey85", xlim = xlim, width = w, xaxs = "i", xaxt = "n", yaxt = "n", lwd = 0.5)
+   grid()
+   x0 <- seq(0, 140, len = 1000)
+   d <- rep(0, length(x0))
+   for (j in 1:n_instar){
+      print(c(j, p[j]))
+      lines(x0, w * p[j] * sum(f) * dnorm(x0, mu[j], sigma[j]), lwd = 1, lty = "dashed", col = "blue")
+      d  <- d + w * p[j] * sum(f) * dnorm(x0, mu[j], sigma[j]) 
+   }
+   lines(x0, d, col = "blue", lwd = 2)
+   vline(mu, col = "red", lwd = 1, lty = "dashed")
+   mtext("Frequency", 2, 2.25, cex = 1.25)
+   mtext("Carapace width(mm)", 1, 2.5, cex = 1.25)
+   axis(1)
+   axis(2)
+   axis(3, at = mu, label = as.roman(4:(4+n_instar-1)))
+   box()
+}
 
 # Define data:
 s <- read.scsset(years, survey = "regular", valid = 1)
@@ -26,9 +50,9 @@ data$swept_area <- s$swept.area
 # Define initial parameters:
 parameters <- list(mu0 = 10,              # First instar mean size.
                    log_sigma0 = log(0.8), # Log-scale standard error for first instar.
-                   log_hiatt_slope     = log(c(0.350, 0.080)), # Hiatt slope parameters.
-                   log_hiatt_intercept = log(c(0.689, 9.000)), # Hiatt intercept parameters.
-                   log_growth_error    = log(c(0.05, 0.22)),   # Growth increment error inflation parameters
+                   log_hiatt_slope     = log(c(0.350, 0.070)), # Hiatt slope parameters.
+                   log_hiatt_intercept = log(c(0.689, 8.000)), # Hiatt intercept parameters.
+                   log_growth_error    = log(c(0.0, 0.20)),   # Growth increment error inflation parameters
                    logit_p_instar      = rep(4.5, n_instar-1),
                    log_sigma_logit_p_instar_tow = -2,
                    logit_p_instar_tow = rep(0, (n_instar-1)*(max(data$tow)+1)))
@@ -45,6 +69,13 @@ obj <- MakeADFun(data, parameters, DLL = "instar_revised_tow", map = map, random
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 parameters$logit_p_instar <- as.numeric(theta)
+
+t <- table(rep(data$x, data$f))
+plot.instar(as.numeric(names(t)), as.numeric(t), 
+            p = apply(obj$report()$p, 1, mean), 
+            mu = obj$report()$mu, 
+            sigma = obj$report()$sigma)
+
 
 # Add growth parameters:
 map$log_hiatt_slope = factor(c(1, 2))
@@ -95,38 +126,18 @@ parameters$log_hiatt_intercept <- as.numeric(theta[grep("log_hiatt_intercept", n
 parameters$log_growth_error    <- as.numeric(theta[grep("log_growth_error", names(theta))])
 parameters$log_sigma_logit_p_instar_tow <- as.numeric(theta[grep("log_sigma_logit_p_instar_tow", names(theta))])
 
-plot.instar <- function(x, f, p, mu, sigma, xlim = c(0, 120), n_instar = 9){
-   clg()
-   dev.new(width = 8.5, height = 11)
-   w <- min(diff(sort(unique(x))))
-   gbarplot(f, x, border = "grey60", col = "grey85", xlim = xlim, width = w, xaxs = "i", xaxt = "n", yaxt = "n", lwd = 0.5)
-   grid()
-   x0 <- seq(0, 140, len = 1000)
-   d <- rep(0, length(x0))
-   for (j in 1:n_instar){
-      lines(x0, w * p[j] * sum(f) * dnorm(x0, mu[j], sigma[j]), lwd = 1, lty = "dashed", col = "blue")
-      d  <- d + w * p[j] * sum(f) * dnorm(x0, mu[j], sigma[j]) 
-   }
-   lines(x0, d, col = "blue", lwd = 2)
-   vline(obj$report()$mu, col = "red", lwd = 1, lty = "dashed")
-   mtext("Frequency", 2, 2.25, cex = 1.25)
-   mtext("Carapace width(mm)", 1, 2.5, cex = 1.25)
-   axis(1)
-   axis(2)
-   axis(3, at = obj$report()$mu, as.roman(4:12))
-   box()
-}
+
 
 # Proportion matrix:
-image(4:12,1:nrow(s), obj$report()$p, xaxt = "n",  xlab = "", ylab = "")
+image(4:13,1:nrow(s), obj$report()$p, xaxt = "n",  xlab = "", ylab = "")
 mtext("Instar", 1, 2.5, cex = 1.25)
 mtext("Tow", 2, 2.5, cex = 1.25)
-axis(1, at = 4:12, as.roman(4:12))
+axis(1, at = 4:13, as.roman(4:12))
 box()
 
 
 p <- obj$report()$p
-rownames(p) <- as.character(as.roman(4:12))
+rownames(p) <- as.character(as.roman(4:13))
 colnames(p) <- substr(s$tow.id, 3, 5)
 
 
@@ -151,7 +162,7 @@ plot.instar(as.numeric(names(t)), as.numeric(t), p = p, mu, sigma)
 # Map instar abundances:
 clg()
 dev.new(height = 11, width = 8.5)
-m <- kronecker(matrix(1:8, ncol = 2), matrix(1, nrow = 5, ncol = 5))
+m <- kronecker(matrix(1:10, ncol = 2), matrix(1, nrow = 5, ncol = 5))
 m <- rbind(0,0,cbind(0,0,m,0),0,0)
 layout(m)
 par(mar = c(0,0,0,0))

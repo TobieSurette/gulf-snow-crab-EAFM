@@ -82,7 +82,6 @@ template<class Type> Type objective_function<Type>::operator()(){
       }
    }   
    
-   
    // Export instar stats:
    REPORT(mu);
    REPORT(sigma);
