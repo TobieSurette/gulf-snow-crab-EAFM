@@ -2,10 +2,11 @@ library(TMB)
 library(gulf.data)
 library(gulf.spatial)
 library(gulf.graphics)
+library(gulf.stats)
 
 category <- "MI"
-years  <- 2019
-n_instar <- 10
+years  <- 2010:2019
+n_instar <- 9
 
 # Work computer fix:
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:/Rtools/mingw_64/bin/")
@@ -39,9 +40,12 @@ plot.instar <- function(x, f, p, mu, sigma, xlim = c(0, 120), n_instar = 9){
 
 # Define data:
 s <- read.scsset(years, survey = "regular", valid = 1)
-b <- read.scsbio(years, survey = "regular")
+b <- read.scsbio(2019, survey = "regular", sex = 1)
+b$maturity <- morphometric.maturity(b)
+
 b <- b[which(is.category(b, category)), ]
 b <- b[which(b$carapace.width >= 2), ]
+
 b$x <- round(b$carapace.width, 1)
 b$tow <- match(b[c("date", "tow.id")], s[c("date", "tow.id")]) - 1
 data <- as.list(aggregate(list(f = b$tow), b[c("tow", "x")], length))
