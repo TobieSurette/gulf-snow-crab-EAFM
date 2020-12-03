@@ -40,11 +40,19 @@ plot.instar <- function(x, f, p, mu, sigma, xlim = c(0, 120), n_instar = 9){
 
 # Define data:
 s <- read.scsset(years, survey = "regular", valid = 1)
-b <- read.scsbio(2019, survey = "regular", sex = 1)
+b <- read.scsbio(years, survey = "regular", sex = 1)
 b$maturity <- morphometric.maturity(b)
-
-b <- b[which(is.category(b, category)), ]
 b <- b[which(b$carapace.width >= 2), ]
+
+# Generate standardized length-frequencies:
+layout(matrix(1:3))
+par(mar = c(0,0,0,0))       
+gbarplot(table(b$x[which(!b$maturity)]), width = 0.1, border = "grey60", xaxs = "i", grid = TRUE, xlim = c(0, 140), ylim = c(0, 200))
+vline(95, col = "red")
+gbarplot(table(b$x[which(b$maturity & is.new.shell(b))]), width = 0.1, border = "grey60", xaxs = "i", grid = TRUE, xlim = c(0, 140), ylim = c(0, 200))
+vline(95, col = "red")
+gbarplot(table(b$x[which(b$maturity & !is.new.shell(b))]), width = 0.1, border = "grey60", xaxs = "i", grid = TRUE, xlim = c(0, 140), ylim = c(0, 200))
+vline(95, col = "red")
 
 b$x <- round(b$carapace.width, 1)
 b$tow <- match(b[c("date", "tow.id")], s[c("date", "tow.id")]) - 1

@@ -16,17 +16,27 @@ dyn.load(dynlib("instar_tow"))
 
 # Define data:
 s <- read.scsset(years, survey = "regular", valid = 1)
+s <- s[sort(sample(1:nrow(s), 75)), ]
+n_tow <- nrow(s)
 b <- read.scsbio(years, survey = "regular", sex = 1)
 b$maturity <- morphometric.maturity(b)
-
 b <- b[which(!b$maturity), ]
 b <- b[which(b$carapace.width >= 2), ]
-
-b$x <- round(b$carapace.width, 1)
+b$x <- round(2*b$carapace.width) / 2
 b$tow <- match(b[c("date", "tow.id")], s[c("date", "tow.id")]) - 1
-data <- as.list(aggregate(list(f = b$tow), b[c("tow", "x")], length))
+b <- b[!is.na(b$tow), ]
+
+t <- table(b[c("tow", "x")])
+m <- setdiff(0:(n_tow-1), as.numeric(rownames(t))) 
+v <- matrix(0, nrow = length(m), ncol = ncol(t))
+dimnames(v) <- list(m, colnames(t))
+t <- rbind(t, v)
+
+tow <- repvec(as.numeric(rownames(t)), ncol = ncol(t))
+x   <- repvec(as.numeric(colnames(t)), nrow = nrow(t))
+f   <- t
+data <- list(x = as.numeric(x), tow = as.numeric(tow), f = as.numeric(f))
 data$swept_area <- s$swept.area
-n_tow <- nrow(s)
 
 # Define initial parameters:
 parameters <- list(mu0                   = 10,                       # First instar mean size.
@@ -41,7 +51,6 @@ parameters <- list(mu0                   = 10,                       # First ins
                    log_sigma_lambda_instar = -1,                     # Log-scale instar effect error parameter.
                    log_sigma_lambda_tow = -1,                        # Log-scale tow effect error parameter.
                    log_sigma_lambda_instar_tow = -1)                 # Log-scale instar x tow interaction effect error parameter.
-
 
 # Define random effects:
 random <- c("log_lambda_instar", "log_lambda_tow", "log_lambda_instar_tow")
@@ -74,7 +83,7 @@ parameters$log_lambda_tow <- obj$report()$log_lambda_tow
 map$log_lambda_instar_tow <- factor(1:length(map$log_lambda_instar_tow))
 map$log_sigma_lambda_instar_tow <- factor(1)
 obj <- MakeADFun(data, parameters, DLL = "instar_tow", map = map, random = random) 
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 obj$par <- theta
 parameters$log_lambda_alpha <- theta[["log_lambda_alpha"]]
 parameters$log_sigma_lambda_instar <- theta[["log_sigma_lambda_instar"]]
@@ -88,7 +97,7 @@ parameters$log_lambda_instar_tow <- obj$report()$log_lambda_instar_tow
 map$log_sigma0 = factor(1)
 map$log_growth_error = factor(c(1, 2))
 obj <- MakeADFun(data, parameters, DLL = "instar_tow", map = map, random = random) 
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
 obj$par <- theta
 parameters$log_lambda_alpha <- theta[["log_lambda_alpha"]]
 parameters$log_sigma_lambda_instar <- theta[["log_sigma_lambda_instar"]]
@@ -100,64 +109,11 @@ parameters$log_lambda_instar_tow <- obj$report()$log_lambda_instar_tow
 parameters$log_growth_error <- theta[grep("log_growth_error", names(theta))]
 parameters$log_sigma0 <- theta[grep("log_sigma0", names(theta))]
 
-# Add growth parameters:
-map$log_hiatt_slope = factor(c(1, 2))
-map$log_hiatt_intercept = factor(c(1, 2))
-obj <- MakeADFun(data, parameters, DLL = "instar_tow", map = map, random = random) 
+obj <- MakeADFun(data, parameters, DLL = "instar_tow", random = random) 
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
-obj$par <- theta
-parameters$log_lambda_alpha <- theta[["log_lambda_alpha"]]
-parameters$log_sigma_lambda_instar <- theta[["log_sigma_lambda_instar"]]
-parameters$log_lambda_instar <- obj$report()$log_lambda_instar
-parameters$log_sigma_lambda_tow <- theta[["log_sigma_lambda_tow"]]
-parameters$log_lambda_tow <- obj$report()$log_lambda_tow
-parameters$log_sigma_lambda_instar_tow <- theta[["log_sigma_lambda_instar_tow"]]
-parameters$log_lambda_instar_tow <- obj$report()$log_lambda_instar_tow
-parameters$log_growth_error <- theta[grep("log_growth_error", names(theta))]
-parameters$log_sigma0 <- theta[grep("log_sigma0", names(theta))]
-parameters$log_hiatt_slope <- theta[grep("log_hiatt_slope", names(theta))]
-parameters$log_hiatt_intercept <- theta[grep("log_hiatt_intercept", names(theta))]
 
-# Add initial instar mean:
-map$mu0 = factor(1)
-obj <- MakeADFun(data, parameters, DLL = "instar_tow", map = map, random = random) 
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
-obj$par <- theta
-parameters$log_lambda_alpha <- theta[["log_lambda_alpha"]]
-parameters$log_sigma_lambda_instar <- theta[["log_sigma_lambda_instar"]]
-parameters$log_lambda_instar <- obj$report()$log_lambda_instar
-parameters$log_sigma_lambda_tow <- theta[["log_sigma_lambda_tow"]]
-parameters$log_lambda_tow <- obj$report()$log_lambda_tow
-parameters$log_sigma_lambda_instar_tow <- theta[["log_sigma_lambda_instar_tow"]]
-parameters$log_lambda_instar_tow <- obj$report()$log_lambda_instar_tow
-parameters$log_growth_error <- theta[grep("log_growth_error", names(theta))]
-parameters$log_sigma0 <- theta[grep("log_sigma0", names(theta))]
-parameters$log_hiatt_slope <- theta[grep("log_hiatt_slope", names(theta))]
-parameters$log_hiatt_intercept <- theta[grep("log_hiatt_intercept", names(theta))]
-parameters$mu0 <- theta[["mu0"]]
-
-
-
-p <- obj$report()$p
-rownames(p) <- as.character(as.roman(4:13))
-colnames(p) <- substr(s$tow.id, 3, 5)
-
-
-map.new()
-map("coast")
-points(longitude(s), latitude(s), cex = 5 * p["VI", ] / max(p["VI", ]))
-
-r <- aggregate(data["f"], by = data["tow"], sum)
-r[which(r[, 2] > 300), 1]
-
-# Individual tow plot:
-i <- 68
-p <- obj$report()$p[, i]
-mu <- obj$report()$mu
-sigma <- obj$report()$sigma
-x <- rep(data$x[data$tow == i-1], data$f[data$tow == i-1])
-t <- table(round(x))
-plot.instar(as.numeric(names(t)), as.numeric(t), p = p, mu, sigma)
+gbarplot(obj$report()$lambda_size, width = 1, border = "grey60", grid = TRUE)
+vline(obj$report()$mu, col = "red")
 
 # Catch-weighted sum of mixtures:
 
