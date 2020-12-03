@@ -5,7 +5,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    DATA_VECTOR(f_imm);          // Immature frequency observations (ni).
    DATA_VECTOR(x_mat);          // Mature size measurements (nm).
    DATA_VECTOR(f_mat);          // Mature frequency observations (nm).
-   DATA(dx);                    // Size-bin width.   
+   DATA_SCALAR(dx);             // Size-bin width.   
    
    // Instar growth parameters:                       
    PARAMETER(mu0);                          // First instar mean size.

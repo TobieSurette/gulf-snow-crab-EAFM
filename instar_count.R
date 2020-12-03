@@ -4,10 +4,19 @@ library(gulf.spatial)
 library(gulf.graphics)
 library(gulf.stats)
 
-years  <- 2015
-n_instar <- 9
-step <- 0.1
-
+years  <- 2019
+sex <- 2
+if (sex == 1){
+   n_instar <- 9
+   xlim <- c(0, 140)
+   ylim <- c(0, 40)
+}else{
+   n_instar <- 7
+   xlim <- c(0, 100)
+   ylim <- c(0, 40)   
+}
+step <- 0.5
+   
 # Work computer fix:
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:/Rtools/mingw_64/bin/")
 
@@ -43,7 +52,7 @@ plot.instar <- function(obj, data, xlim = c(0, 140), ylim = c(0, 50)){
    mtext("Frequency", 2, 2.25, cex = 1.25)
    axis(2)
    axis(3, at = mu, label = as.roman(4:(4+n_instar-1)))
-   text(120, ylim[1] + 0.8 * diff(ylim), years, cex = 1.5)
+   text(xlim[1] + 0.9 * diff(xlim), ylim[1] + 0.8 * diff(ylim), years, cex = 1.5)   
    box()
    mtext("Immature", 4, 1.5, cex = 1.25, srt = 180)
    
@@ -63,7 +72,7 @@ plot.instar <- function(obj, data, xlim = c(0, 140), ylim = c(0, 50)){
    vline(mu, col = "red", lwd = 1, lty = "dashed")
    mtext("Frequency", 2, 2.25, cex = 1.25)
    axis(2)
-   text(120, ylim[1] + 0.8 * diff(ylim), years + 1, cex = 1.5)
+   text(xlim[1] + 0.9 * diff(xlim), ylim[1] + 0.8 * diff(ylim), years + 1, cex = 1.5)
    box()
    mtext("Carapace width(mm)", 1, 2.5, cex = 1.25)
    axis(1)
@@ -72,22 +81,22 @@ plot.instar <- function(obj, data, xlim = c(0, 140), ylim = c(0, 50)){
 
 # Define data:
 s <- read.scsset(years, survey = "regular", valid = 1)
-b <- read.scsbio(years, survey = "regular", sex = 1)
+b <- read.scsbio(years, survey = "regular", sex = sex)
 b$tow.id <- tow.id(b)
-b$maturity <- morphometric.maturity(b)
+if (sex == 1) b$maturity <- morphometric.maturity(b) else b$maturity <- is.mature(b)
 b <- b[which(b$carapace.width >= 2), ]
 import(s, fill = 0) <- freq(b[which(!b$maturity), ], by = key(s), step = step)
 fvars <- names(s)[gsub("[0-9.]", "", names(s)) == ""]
 s[fvars] <- 1000000 * s[fvars] / repvec(s$swept.area, ncol = length(fvars))
 fi <- apply(s[fvars], 2, mean)
 #fi <- length(which(!b$maturity)) * (fi / sum(fi))
-fi[setdiff(as.character(seq(5, 120, by = step)), names(fi))] <- 0
+fi[setdiff(as.character(seq(5, xlim[2]-20, by = step)), names(fi))] <- 0
 fi <- fi[order(as.numeric(names(fi)))]
     
 s <- read.scsset(years+1, survey = "regular", valid = 1)
-b <- read.scsbio(years+1, survey = "regular", sex = 1)
+b <- read.scsbio(years+1, survey = "regular", sex = sex)
 b$tow.id <- tow.id(b)
-b$maturity <- morphometric.maturity(b)
+if (sex == 1) b$maturity <- morphometric.maturity(b) else b$maturity <- is.mature(b)
 b <- b[which(b$carapace.width >= 35), ]
 ix <- which(b$maturity & is.new.shell(b))
 import(s, fill = 0) <- freq(b[ix, ], by = key(s), step = step)
@@ -95,14 +104,15 @@ fvars <- names(s)[gsub("[0-9.]", "", names(s)) == ""]
 s[fvars] <- 1000000 * s[fvars] / repvec(s$swept.area, ncol = length(fvars))
 fm <- apply(s[fvars], 2, mean)
 #fm <- length(ix) * (fm / sum(fm))
-fm[setdiff(as.character(seq(10, 140, by = step)), names(fm))] <- 0
+fm[setdiff(as.character(seq(10, xlim[2], by = step)), names(fm))] <- 0
 fm <- fm[order(as.numeric(names(fm)))]
 
 # Define data:
 data <- list(x_imm = as.numeric(names(fi)),
              f_imm = as.numeric(fi),
              x_mat = as.numeric(names(fm)),
-             f_mat = as.numeric(fm))
+             f_mat = as.numeric(fm),
+             dx = step)
             
 # Define initial parameters:
 parameters <- list(mu0                     = 10,                       # First instar mean size.
@@ -129,7 +139,7 @@ parameters$log_sigma_lambda_instar <- theta[["log_sigma_lambda_instar"]]
 parameters$log_lambda_instar <- obj$report()$log_lambda_instar
 parameters$logit_scale <- obj$report()$logit_scale
 
-plot.instar(obj, data)
+# plot.instar(obj, data)
 
 # Add error parameters:
 map$log_sigma0 = factor(1)
@@ -145,11 +155,10 @@ parameters$log_growth_error <- theta[grep("log_growth_error", names(theta))]
 parameters$log_sigma0 <- theta[grep("log_sigma0", names(theta))]
 
 obj <- MakeADFun(data, parameters, DLL = "instar_count", random = "log_lambda_instar") 
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 5000))$par
 obj$par <- theta
 
-plot.instar(obj, data, ylim = c(0, 40))
-
+plot.instar(obj, data, xlim = xlim, ylim = c(0, 180))
 
 100 * obj$report()$scale
 
