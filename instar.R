@@ -1,8 +1,24 @@
 library(TMB)
 library(gulf.data)
+library(gulf.spatial)
 library(gulf.graphics)
+library(gulf.stats)
 
-years  <- 2009:2020
+years  <- 2017
+sex <- 2
+step <- 0.5
+if (sex == 1){
+   n_instar <- 9
+   xlim <- c(0, 140)
+   ylim <- c(0, 40)
+}else{
+   n_instar <- 7
+   xlim <- c(0, 100)
+   ylim <- c(0, 40)   
+}
+
+source("instar.data.R")
+source("instar.plot.R")
 
 # Work computer fix:
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:/Rtools/mingw_64/bin/")
@@ -10,75 +26,48 @@ if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:
 compile("instar.cpp")
 dyn.load(dynlib("instar"))
 
-clg()
-m <- kronecker(matrix(1:length(years), ncol = 2), matrix(1, ncol = 4, nrow = 4))
-m <- rbind(0, cbind(0, 0, m, 0), 0, 0)
-layout(m)
-par(mar = c(0,0,0,0))
-m <- s <- p <- NULL
-for (i in 1:length(years)){
-   # Define data:
-   b <- read.scsbio(years[i], survey = "regular")
-   b <- b[which(is.category(b, "MI")), ]
-   b <- b[which(b$carapace.width > 10), ]
-   x <- table(round(log(b$carapace.width), 2))
-   data <- list(x = as.numeric(names(x)), f = as.numeric(x))
+# Define initial parameters:
+parameters <- list(mu0                     = 10,                       # First instar mean size.
+                   log_sigma0              = log(0.8),                 # Log-scale standard error for first instar.
+                   log_hiatt_slope         = log(c(0.350, 0.0920)),    # Hiatt slope parameters.
+                   log_hiatt_intercept     = log(c(0.689, 8.000)),     # Hiatt intercept parameters.
+                   log_growth_error        = log(c(0.01, 0.10)),       # Growth increment error inflation parameters
+                   log_lambda_alpha        = 7.5,                      # Log-scale global mean density.
+                   log_lambda_instar       = rep(0, n_instar),         # Log-scale instar effect.
+                   log_sigma_lambda_instar = -1,                       # Log-scale instar effect error parameter.
+                   logit_scale             = rep(0, n_instar))
 
-   # Define initial parameters:
-   parameters <- list(mu_instar_0 = 2.3, 
-                      log_increment = c(-1.1, -1.1, -1.1, -1.10, -1.36, -1.16, -1.33),
-                      log_mu_increment = -1.165,
-                      log_sigma_increment = -3.42,
-                      mu_log_sigma_instar = -2.24,   
-                      log_sigma_log_sigma_instar = -2.44, 
-                      log_sigma_instar = rep(-2.41, 8),
-                      logit_p_instar = c( 3.08, 4.44, 4.92, 5.20, 6.45, 6.08, 5.52 ))
+# Fit instar abundances:
+map <- lapply(parameters, function(x) factor(rep(NA, length(x))))
+map$log_lambda_alpha  <- factor(1)
+map$log_lambda_instar <- factor(1:length(parameters$log_lambda_instar))
+map$logit_scale       <- factor(1:length(parameters$logit_scale))
+map$log_sigma_lambda_instar <- factor(1)
+obj <- MakeADFun(data, parameters, DLL = "instar_count", map = map, random = "log_lambda_instar") 
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+obj$par <- theta
+parameters$log_lambda_alpha <- theta[["log_lambda_alpha"]]
+parameters$log_sigma_lambda_instar <- theta[["log_sigma_lambda_instar"]]
+parameters$log_lambda_instar <- obj$report()$log_lambda_instar
+parameters$logit_scale <- obj$report()$logit_scale
 
-   obj <- MakeADFun(data, parameters, DLL = "instar", random = c("log_sigma_instar", "log_increment")) 
+# Add error parameters:
+map$log_sigma0 = factor(1)
+map$log_growth_error = factor(c(1, 2))
+obj <- MakeADFun(data, parameters, DLL = "instar_count", map = map, random = "log_lambda_instar") 
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
+obj$par <- theta
+parameters$log_lambda_alpha <- theta[["log_lambda_alpha"]]
+parameters$log_sigma_lambda_instar <- theta[["log_sigma_lambda_instar"]]
+parameters$log_lambda_instar <- obj$report()$log_lambda_instar
+parameters$logit_scale <- obj$report()$logit_scale
+parameters$log_growth_error <- theta[grep("log_growth_error", names(theta))]
+parameters$log_sigma0 <- theta[grep("log_sigma0", names(theta))]
 
-   # Estimate parameters:
-   theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
-   
-   # Parse output:
-   obj$par <- theta
-   rep <- sdreport(obj)
-   phi <- summary(rep, "random")
-   theta <- summary(rep, "fixed")
+obj <- MakeADFun(data, parameters, DLL = "instar_count", random = "log_lambda_instar") 
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 5000))$par
+obj$par <- theta
 
-   # Plot output:
-   gbarplot(data$f, data$x, border = "grey50", width = 0.01, xlim = c(2, 5), xaxs = "i", xaxt = "n", yaxt = "n")
-   grid()
-   vline(obj$report()$mu_instar, col = "red", lwd = 2)
-   x0 <- seq(0, 5, len = 1000)
-   d <- rep(0, length(x0))
-   for (j in 1:length(obj$report()$mu_instar)){
-      lines(x0, 0.01 * obj$report()$p_instar[j] * sum(data$f) * dnorm(x0, obj$report()$mu_instar[j], obj$report()$sigma_instar[j]), lwd = 2, col = "blue")
-      d <- d + .01 * obj$report()$p_instar[j] * sum(data$f) * dnorm(x0, obj$report()$mu_instar[j], obj$report()$sigma_instar[j]) 
-   }
-   lines(x0, d, col = "darkgreen", lwd = 2)
-   
-   if ((i / length(years)) <= 0.5) axis(2)
-   if (i %in% c(length(years)/2, length(years))) axis(1)
-   if (i == length(years)/2) mtext("log(cw)", 1, 2.5, at = par("usr")[2])
-   if (i == 3) mtext("Frequency", 2, 2, cex = 1.25, at = 0)
-   text(par("usr")[1] + 0.1 * diff(par("usr")[1:2]),
-        par("usr")[3] + 0.85 * diff(par("usr")[3:4]), years[i], cex = 1.2)
+plot.instar(obj, data, xlim = xlim, ylim = c(0, 180))
 
-   # Store output:
-   m <- rbind(m, obj$report()$mu_instar)
-   s <- rbind(s, obj$report()$sigma_instar)
-   p <- rbind(p, obj$report()$p_instar)
-}
-rownames(m) <- years
-rownames(s) <- years
-rownames(p) <- years
-
-#clg()
-#v <- obj$report()$sigma
-#plot(range(years), c(10, 120), type = "n")
-#for (i in 1:length(years)){
-#   points(rep(years[i], ncol(mu)), exp(mu[i, ]))
-#}
-
-
-           
+100 * obj$report()$scale
