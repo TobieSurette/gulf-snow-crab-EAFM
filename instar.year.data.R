@@ -1,5 +1,3 @@
-years <- 2010:2020
-
 # Define immature data:
 s <- read.scsset(years, survey = "regular", valid = 1)
 b <- read.scsbio(years, survey = "regular", sex = sex)
@@ -46,6 +44,5 @@ data <- list(x_imm    = as.numeric(repvec(as.numeric(colnames(fi)), nrow = nrow(
              x_mat    = as.numeric(repvec(as.numeric(colnames(fm)), nrow = nrow(fm))),
              f_mat    = as.numeric(fm),
              year_mat = as.numeric(repvec(as.numeric(rownames(fm)), ncol = ncol(fm))) - min(years),
-             dx       = step)
-
+             delta_x  = step)
 

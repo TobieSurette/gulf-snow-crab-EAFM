@@ -1,0 +1,26 @@
+---
+title: "Population model specification"
+author: "Tobie Surette"
+date: "12/7/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assumptions
+
+- Skip-moulters moult to maturity the following year.
+- Skip-moulters only exist from instar IX onward.
+- Matures exist from instar IX onward.
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
