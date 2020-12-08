@@ -9,6 +9,13 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## To do: 
+- Add annual varations in moult to maturity
+- plot annual immature and mature fits (overlapped).
+- Add vessel effect
+- Add interaction error / mortality variability
+-
+
 ## Assumptions
 
 - Skip-moulters moult to maturity the following year.

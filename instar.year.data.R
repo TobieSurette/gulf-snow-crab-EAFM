@@ -30,7 +30,7 @@ s[fvars] <- 1000000 * s[fvars] / repvec(s$swept.area, ncol = length(fvars))
 fm <- NULL
 for (i in 1:length(years)){
   tmp <- apply(s[year(s) == years[i], fvars], 2, mean)
-  tmp[setdiff(as.character(seq(5, xlim[2]-20, by = step)), names(tmp))] <- 0
+  tmp[setdiff(as.character(seq(3, xlim[2]-20, by = step)), names(tmp))] <- 0
   tmp <- tmp[order(as.numeric(names(tmp)))]
   tmp <- t(tmp)
   rownames(tmp) <- years[i]
