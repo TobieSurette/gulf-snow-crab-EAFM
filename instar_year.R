@@ -40,8 +40,8 @@ parameters <- list(mu0                 = 10,                        # First inst
                    log_growth_error    = log(c(0.01, 0.10)),        # Growth increment error inflation parameters.
                    log_mu_year         = rep(0, n_instar * n_year), # Log-scale instar mean year interaction (n_instar x n_year).
                    log_sigma_mu_year   = -1,                        # Instar mean year interaction error term.
-                   log_n_imm_year_0    = rep(4, n_instar),          # First year immature instar abundances (n_instar).
-                   log_n_imm_instar_0  = rep(4, n_year-1),          # First instar recruitment for all years (n_year-1).
+                   log_n_imm_year_0    = rep(4, n_instar-1),        # First year immature instar abundances (n_instar-1).
+                   log_n_imm_instar_0  = rep(4, n_year),            # First instar recruitment for all years (n_year).
                    log_sigma_n_imm_instar_0 = -1,                   # Log-scale first instar annual recruitment error parameter.
                    log_n_skp_instar_0  = rep(0, n_instar-5),        # First year skip abundances (n_instar-5).                         
                    log_n_rec_instar_0  = rep(0, n_instar-5),        # First year mature recruit abundances (n_instar-5).
@@ -58,7 +58,6 @@ parameters <- list(mu0                 = 10,                        # First inst
 
 # Estimate initial abundance parameters:
 map <- lapply(parameters, function(x) factor(rep(NA, length(x))))
-logit_M_matlog_n_imm_year_0 <- factor(1:length(parameters$log_n_imm_year_0))
 map$log_n_imm_instar_0 <- factor(1:length(parameters$log_n_imm_instar_0))
 map$log_n_imm_year_0   <- factor(1:length(parameters$log_n_imm_year_0))
 map$log_n_skp_instar_0 <- factor(1:length(parameters$log_n_skp_instar_0))
@@ -66,7 +65,7 @@ map$log_n_rec_instar_0 <- factor(1:length(parameters$log_n_rec_instar_0))
 map$log_n_res_instar_0 <- factor(1:length(parameters$log_n_res_instar_0))
 map$log_sigma_n_imm_instar_0 <- factor(1)
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
-                 random = c("log_mu_year", "log_n_imm_instar_0"),
+                 random = c("log_mu_year", "log_n_imm_instar_0", "logit_p_mat_year"),
                  map = map)
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
@@ -84,7 +83,7 @@ parameters$log_sigma_n_imm_instar_0 <- as.numeric(theta["log_sigma_n_imm_instar_
 map$logit_M_mat <- factor(1)
 map$logit_M_imm <- factor(1)
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
-                 random = c("log_mu_year", "log_n_imm_instar_0"),
+                 random = c("log_mu_year", "log_n_imm_instar_0", "logit_p_mat_year"),
                  map = map)
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
@@ -105,7 +104,7 @@ map$selectivity_x50 <- factor(1:2)
 map$log_selectivity_slope <-  factor(1:2)    
 map$logit_selectivity_proportion <-  factor(1)                
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
-                 random = c("log_mu_year", "log_n_imm_instar_0"),
+                 random = c("log_mu_year", "log_n_imm_instar_0", "logit_p_mat_year"),
                  map = map)
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
@@ -152,12 +151,12 @@ parameters$logit_p_mat_year    <- as.numeric(random[grep("logit_p_mat_year", nam
 parameters$log_sigma_p_mat_year  <- as.numeric(theta["log_sigma_p_mat_year"])
 parameters$log_selectivity_slope[2] <- -1
 
-# Add growth parameters:
+# Add some growth parameters:
 map$log_hiatt_slope     <- factor(1:length(parameters$log_hiatt_slope))
 map$log_hiatt_intercept <- factor(1:length(parameters$log_hiatt_intercept))       
-map$log_growth_error    <- factor(1:length(parameters$log_growth_error))
+#map$log_growth_error    <- factor(1:length(parameters$log_growth_error))
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
-                 random = c("log_mu_year", "log_n_imm_instar_0"),
+                 random = c("log_mu_year", "log_n_imm_instar_0", "logit_p_mat_year"),
                  map = map)
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
@@ -175,10 +174,12 @@ parameters$logit_M_imm <- as.numeric(theta["logit_M_imm"])
 parameters$selectivity_x50 <- as.numeric(fixed[grep("selectivity_x50", names(fixed))])
 parameters$log_selectivity_slope <- as.numeric(fixed[grep("log_selectivity_slope", names(fixed))])
 parameters$logit_selectivity_proportion <- as.numeric(fixed[grep("logit_selectivity_proportion", names(fixed))]) 
-parameters$log_hiatt_slope     <- as.numeric(fixed[grep("log_hiatt_slope", names(fixed))])
-parameters$log_hiatt_intercept <- as.numeric(fixed[grep("log_hiatt_intercept", names(fixed))])
-parameters$log_growth_error    <- as.numeric(fixed[grep("log_growth_error", names(fixed))])
 parameters$logit_p_mat         <- as.numeric(fixed[grep("logit_p_mat", names(fixed))])
 parameters$logit_p_mat_year           <- as.numeric(random[grep("logit_p_mat_year", names(random))])
 parameters$log_sigma_p_mat_year       <- as.numeric(theta["log_sigma_p_mat_year"])
+parameters$log_hiatt_slope     <- as.numeric(fixed[grep("log_hiatt_slope", names(fixed))])
+parameters$log_hiatt_intercept <- as.numeric(fixed[grep("log_hiatt_intercept", names(fixed))])
+#parameters$log_growth_error    <- as.numeric(fixed[grep("log_growth_error", names(fixed))])
+
+
 

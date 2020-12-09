@@ -17,10 +17,10 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(log_growth_error);       // Growth increment error inflation parameters.
    PARAMETER_VECTOR(log_mu_year);            // Log-scale instar mean year interaction (n_instar x n_year).
    PARAMETER(log_sigma_mu_year);             // Instar mean year interaction error term.
-   
+
    // Abundance parameters:
-   PARAMETER_VECTOR(log_n_imm_year_0);       // First year immature instar abundances (n_instar).
-   PARAMETER_VECTOR(log_n_imm_instar_0);     // First instar recruitment for all years (n_year-1).
+   PARAMETER_VECTOR(log_n_imm_year_0);       // First year immature instar abundances (n_instar-1).
+   PARAMETER_VECTOR(log_n_imm_instar_0);     // First instar recruitment for all years (n_year).
    PARAMETER(log_sigma_n_imm_instar_0);      // Log-scale first instar annual recruitment error parameter.
    PARAMETER_VECTOR(log_n_skp_instar_0);     // First year skip abundances (n_instar - 5).
    PARAMETER_VECTOR(log_n_rec_instar_0);     // First year mature recruit abundances (n_instar - 5).
@@ -47,7 +47,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Vector sizes:      
    int ni = x_imm.size();                        // Number of immature observations.
    int nm = x_mat.size();                        // Number of mature observations.
-   int n_instar = log_n_imm_year_0.size();       // Number instars.
+   int n_instar = log_n_imm_year_0.size() + 1;   // Number instars.
    int n_year   = log_mu_year.size() / n_instar; // Number of years.
   
    // Instar global mean and error:
@@ -85,11 +85,11 @@ template<class Type> Type objective_function<Type>::operator()(){
    
    // Immature abundances for first year and first instar: 
    v -= sum(dnorm(log_n_imm_instar_0, 0, exp(log_sigma_n_imm_instar_0), true)); 
-   for (int k = 0; k < n_instar; k++){ 
-      n_imm(k,0) = exp(log_n_imm_year_0[k]);  
+   for (int k = 1; k < n_instar; k++){ 
+      n_imm(k,0) = exp(log_n_imm_year_0[k-1]);   // First-year immatures.
    }
-   for (int y = 1; y < n_year; y++){ 
-     n_imm(0,y) = exp(log_n_imm_instar_0[y-1]);  
+   for (int y = 0; y < n_year; y++){ 
+     n_imm(0,y) = exp(log_n_imm_instar_0[y]);  // First instar recruits.
    } 
    
    // Skip abundances for first year and first instar: 
