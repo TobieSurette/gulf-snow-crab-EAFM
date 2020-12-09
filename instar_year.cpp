@@ -27,13 +27,16 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(log_n_res_instar_0);     // First year mature residual abundances (n_instar - 5).
    
    // Selectivity parameters:
-   PARAMETER(selectivity_x50);               // Size-at-50% trawl selectivity.
-   PARAMETER(log_selectivity_slope);         // Log-scale trawl selectivity slope.
-
+   PARAMETER_VECTOR(selectivity_x50);        // Size-at-50% trawl selectivity.
+   PARAMETER_VECTOR(log_selectivity_slope);  // Log-scale trawl selectivity slope.
+   PARAMETER(logit_selectivity_proportion);  
+       
    // Moulting probability parameters:
    PARAMETER_VECTOR(logit_p_skp);            // Logit-scale skip-moulting probabilities (n_instar).
    PARAMETER_VECTOR(logit_p_mat);            // Logit-scale moult-to-maturity probabilities (n_instar).
-
+   PARAMETER_VECTOR(logit_p_mat_year);       // Logit-scale mout-to-maturity instar x year interaction (n_instar x n_year).
+   PARAMETER(log_sigma_p_mat_year);          // Moult-to-maturity instar x year interaction error term.
+                   
    // Mortality parameters:
    PARAMETER(logit_M_imm);                   // Logit-scale immature mortality.
    PARAMETER(logit_M_mat);                   // Logit-scale mature mortality.     
@@ -124,7 +127,13 @@ template<class Type> Type objective_function<Type>::operator()(){
    
    // Moulting probabilities:
    vector<Type> p_skp = Type(1) / (Type(1) + exp(-logit_p_skp)); // Skip-moulting probabilities.
-   vector<Type> p_mat = Type(1) / (Type(1) + exp(-logit_p_mat)); // Moult-to-maturity probabilities.
+   v -= sum(dnorm(logit_p_mat_year, 0, exp(log_sigma_p_mat_year), true)); 
+   matrix<Type> p_mat(n_instar,n_year);
+   for (int k = 0; k < n_instar; k++){
+      for (int y = 0; y < n_year; y++){
+         p_mat(k,y) = Type(1) / (Type(1) + exp(-logit_p_mat[k] - logit_p_mat_year[y * n_instar + k]));
+      }
+   }
    
    // Mortality probabilities:
    Type M_imm = Type(1) / (Type(1) + exp(-logit_M_imm));         // Immature annual mortality.
@@ -133,9 +142,9 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Population dynamics equations:
    for (int k = 1; k < n_instar; k++){
       for (int y = 1; y < n_year; y++){
-         n_imm(k,y) = (1-p_mat[k-1]) * (1-p_skp[k-1]) * (1-M_imm) * n_imm(k-1,y-1); 
-         n_skp(k,y) = (1-p_mat[k-1]) * p_skp[k-1] * (1-M_imm) * n_imm(k,y-1);    
-         n_rec(k,y) = (1-M_mat) * ((1-p_skp[k-1]) * p_mat[k-1] * n_imm(k-1,y-1) + n_skp(k-1,y-1)); 
+         n_imm(k,y) = (1-p_mat(k-1,y-1)) * (1-p_skp[k-1]) * (1-M_imm) * n_imm(k-1,y-1); 
+         n_skp(k,y) = (1-p_mat(k-1,y-1)) * p_skp[k-1] * (1-M_imm) * n_imm(k,y-1);    
+         n_rec(k,y) = (1-M_mat) * ((1-p_skp[k-1]) * p_mat(k-1,y-1) * n_imm(k-1,y-1) + n_skp(k-1,y-1)); 
          n_res(k,y) = (1-M_mat) * (n_rec(k,y-1) + n_res(k,y-1));    
       }
    }
@@ -148,9 +157,12 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Likelihood evaluation for immatures:
    vector<Type> eta_imm(ni);
    eta_imm.fill(0);
-   vector<Type> ll_imm(ni);
    for (int i = 0; i < ni; i++){ 
-      Type selectivity = Type(1) / (Type(1) + exp(-exp(log_selectivity_slope) * (x_imm[i] - selectivity_x50)));  // Trawl fishing selectivity.
+      // Define selectivity curve:
+      Type p0 = Type(1) / (Type(1) + exp(-exp(log_selectivity_slope[0]) * (x_imm[i] - selectivity_x50[0]))); 
+      Type p1 = Type(1) / (Type(1) + exp(-exp(log_selectivity_slope[1]) * (x_imm[i] - selectivity_x50[1]))); 
+      Type w = Type(1) / (Type(1) + exp(-logit_selectivity_proportion));
+      Type selectivity = w * p0 + (1-w) * p1;
       for (int k = 0; k < n_instar; k++){
          eta_imm[i] += selectivity * (n_imm(k,year_imm[i]) + n_skp(k,year_imm[i])) * 
                        (pnorm(x_imm[i] + delta_x / 2, mu_imm(k,year_imm[i]), sigma[k]) - 
@@ -158,35 +170,32 @@ template<class Type> Type objective_function<Type>::operator()(){
       }
       if (eta_imm[i] > 0){ 
          v -= dpois(f_imm[i], eta_imm[i], true);
-         ll_imm[i] = dpois(f_imm[i], eta_imm[i], true);
-      }else{
-         ll_imm[i] = 0;
       }
    }
    
    // Likelihood evaluation for matures:
    vector<Type> eta_mat(nm);
    eta_mat.fill(0);
-   vector<Type> ll_mat(nm);
-   vector<Type> selectivity_mat(nm);
    for (int i = 0; i < nm; i++){ 
-      selectivity_mat[i] = Type(1) / (Type(1) + exp(-exp(log_selectivity_slope) * (x_mat[i] - selectivity_x50)));  // Trawl fishing selectivity.
+      // Define selectivity curve:
+      Type p0 = Type(1) / (Type(1) + exp(-exp(log_selectivity_slope[0]) * (x_mat[i] - selectivity_x50[0]))); 
+      Type p1 = Type(1) / (Type(1) + exp(-exp(log_selectivity_slope[1]) * (x_mat[i] - selectivity_x50[1]))); 
+      Type w = Type(1) / (Type(1) + exp(-logit_selectivity_proportion));
+      Type selectivity = w * p0 + (1-w) * p1;
       for (int k = 0; k < n_instar; k++){
-         eta_mat[i] += selectivity_mat[i] * 
+         eta_mat[i] += selectivity * 
                        n_mat(k,year_mat[i]) * 
                       (pnorm(x_mat[i] + delta_x / 2, mu_mat(k,year_mat[i]), sigma[k]) - 
                        pnorm(x_mat[i] - delta_x / 2, mu_mat(k,year_mat[i]), sigma[k]));
       }
       if (eta_mat[i] > 0){ 
          v -= dpois(f_mat[i], eta_mat[i], true);
-         ll_mat[i] = dpois(f_mat[i], eta_mat[i], true);
-      }else{
-         ll_mat[i] = 0;
       }
    }
    
-   REPORT(selectivity_mat);
+   // Export results:
    REPORT(mu_imm);
+   REPORT(sigma);
    REPORT(p_skp);
    REPORT(p_mat);
    REPORT(n_imm);
@@ -198,8 +207,6 @@ template<class Type> Type objective_function<Type>::operator()(){
    REPORT(eta_mat);
    REPORT(M_imm);
    REPORT(M_mat);
-   // REPORT(ll_imm);
-   // REPORT(ll_mat);
    
    return v;
 }

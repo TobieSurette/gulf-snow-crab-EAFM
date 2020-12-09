@@ -4,7 +4,10 @@ p <- parameters
 
 # Selectivity plot:
 t <- seq(0, 140, len = 1000)
-y <- 1 / (1 + exp(-exp(p$log_selectivity_slope)  * (t - p$selectivity_x50)));
+p0 <- 1 / (1 + exp(-exp(p$log_selectivity_slope[1])  * (t - p$selectivity_x50[1])));
+p1 <- 1 / (1 + exp(-exp(p$log_selectivity_slope[2])  * (t - p$selectivity_x50[2])));
+w <- 1 / (1 + exp(-p$logit_selectivity_proportion))
+y <- w * p0 + (1-w) * p1
 plot(t, y, type = "l", ylim = c(0, 1), yaxs = "i", 
      lwd = 2, col = "blue", xaxs = "i", xlab = "", ylab = "")
 grid()
@@ -25,7 +28,7 @@ for (i in 1:length(years)){
    eta <- obj$report()$eta_imm[ix]
    x <- data$x_imm[ix]
    f <- data$f_imm[ix]
-   plot(c(0, xlim[2]-10), c(0, 180), type = "n", xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n")
+   plot(c(0, xlim[2]-10), c(0, 250), type = "n", xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n")
    grid()
    lines(x, f, lwd = 2, col = "grey60")
    lines(x, eta, lwd = 2, col = "red")
