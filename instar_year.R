@@ -149,7 +149,7 @@ parameters$logit_selectivity_proportion <- as.numeric(fixed[grep("logit_selectiv
 parameters$logit_p_mat         <- as.numeric(fixed[grep("logit_p_mat", names(fixed))])
 parameters$logit_p_mat_year    <- as.numeric(random[grep("logit_p_mat_year", names(random))])
 parameters$log_sigma_p_mat_year  <- as.numeric(theta["log_sigma_p_mat_year"])
-parameters$log_selectivity_slope[2] <- -1
+#parameters$log_selectivity_slope[2] <- -1
 
 # Add some growth parameters:
 map$log_hiatt_slope     <- factor(1:length(parameters$log_hiatt_slope))
