@@ -32,9 +32,9 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER(logit_selectivity_proportion);  
        
    // Moulting probability parameters:
-   PARAMETER_VECTOR(logit_p_skp);            // Logit-scale skip-moulting probabilities (n_instar).
-   PARAMETER_VECTOR(logit_p_mat);            // Logit-scale moult-to-maturity probabilities (n_instar).
-   PARAMETER_VECTOR(logit_p_mat_year);       // Logit-scale mout-to-maturity instar x year interaction (n_instar x n_year).
+   PARAMETER_VECTOR(logit_p_skp);            // Logit-scale skip-moulting probabilities (n_instar-1).
+   PARAMETER_VECTOR(logit_p_mat);            // Logit-scale moult-to-maturity probabilities (n_instar-1).
+   PARAMETER_VECTOR(logit_p_mat_year);       // Logit-scale mout-to-maturity instar x year interaction (n_instar-1 x n_year-1).
    PARAMETER(log_sigma_p_mat_year);          // Moult-to-maturity instar x year interaction error term.
                    
    // Mortality parameters:
@@ -128,10 +128,10 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Moulting probabilities:
    vector<Type> p_skp = Type(1) / (Type(1) + exp(-logit_p_skp)); // Skip-moulting probabilities.
    v -= sum(dnorm(logit_p_mat_year, 0, exp(log_sigma_p_mat_year), true)); 
-   matrix<Type> p_mat(n_instar,n_year);
-   for (int k = 0; k < n_instar; k++){
-      for (int y = 0; y < n_year; y++){
-         p_mat(k,y) = Type(1) / (Type(1) + exp(-logit_p_mat[k] - logit_p_mat_year[y * n_instar + k]));
+   matrix<Type> p_mat(n_instar-1, n_year-1);
+   for (int k = 0; k < (n_instar-1); k++){
+      for (int y = 0; y < (n_year-1); y++){
+         p_mat(k,y) = Type(1) / (Type(1) + exp(-logit_p_mat[k] - logit_p_mat_year[y * (n_instar-1) + k]));
       }
    }
    

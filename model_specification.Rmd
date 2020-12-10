@@ -94,7 +94,9 @@ with the superscripts $imm$ representing regular immatures, $skip$ representing 
 
 
 ## To do: 
-- Add vessel effect
+- Remove superfluous p_mat and p_skip row/column
 - Add interaction error / mortality variability
-- Add mature growth modification     
+- Add vessel effect
+- Add mature growth modification   
+- Display histograms with immatures y and mature y + 1 
       
