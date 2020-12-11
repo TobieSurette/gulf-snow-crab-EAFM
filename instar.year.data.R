@@ -17,7 +17,7 @@ for (i in 1:length(years)){
   fi <- rbind(fi, tmp)
 }
 
-# Define mature data:
+# Define mature recruitment data:
 s <- read.scsset(years, survey = "regular", valid = 1)
 b <- read.scsbio(years, survey = "regular", sex = sex)
 b$tow.id <- tow.id(b)
@@ -37,6 +37,26 @@ for (i in 1:length(years)){
   fm <- rbind(fm, tmp)
 }
 
+# Define mature residual data:
+s <- read.scsset(years, survey = "regular", valid = 1)
+b <- read.scsbio(years, survey = "regular", sex = sex)
+b$tow.id <- tow.id(b)
+if (sex == 1) b$maturity <- morphometric.maturity(b) else b$maturity <- is.mature(b)
+b <- b[which(b$carapace.width >= 35), ]
+ix <- which(b$maturity & !is.new.shell(b))
+import(s, fill = 0) <- freq(b[ix, ], by = key(s), step = step)
+fvars <- names(s)[gsub("[0-9.]", "", names(s)) == ""]
+s[fvars] <- 1000000 * s[fvars] / repvec(s$swept.area, ncol = length(fvars))
+fr <- NULL
+for (i in 1:length(years)){
+  tmp <- apply(s[year(s) == years[i], fvars], 2, mean)
+  tmp[setdiff(as.character(seq(3, xlim[2]-20, by = step)), names(tmp))] <- 0
+  tmp <- tmp[order(as.numeric(names(tmp)))]
+  tmp <- t(tmp)
+  rownames(tmp) <- years[i]
+  fr <- rbind(fr, tmp)
+}
+
 # Define data:
 data <- list(x_imm    = as.numeric(repvec(as.numeric(colnames(fi)), nrow = nrow(fi))),
              f_imm    = as.numeric(fi),
@@ -45,4 +65,5 @@ data <- list(x_imm    = as.numeric(repvec(as.numeric(colnames(fi)), nrow = nrow(
              f_mat    = as.numeric(fm),
              year_mat = as.numeric(repvec(as.numeric(rownames(fm)), ncol = ncol(fm))) - min(years),
              delta_x  = step)
+
 
