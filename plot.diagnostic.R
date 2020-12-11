@@ -49,16 +49,6 @@ for (i in 1:length(years)){
    if (i == round(2*n_year/3)) mtext("Carapace width(mm)", 1, 3, cex = 1.4)
 }
 
-
-# female moulting probability VIII to IX.png
-p_mat <- obj$report()$p_mat
-p_mat <- p_mat[-nrow(p_mat), -ncol(p_mat)]
-gbarplot(p_mat[5, ], years[-length(years)], xlab = "", ylab =  "")
-mtext("Year", 1, 2.5, cex = 1.25)
-mtext("Moult-to-maturity probability", 2, 2.5, cex = 1.25)
-mtext("Instar VIII to IX", 3, 1.0, cex = 1.5)
-
-
 # Length-frequency data
 clg()
 dev.new(height = 8.5, width = 11)
@@ -69,16 +59,67 @@ par(mar = c(0,0,0,0))
 image(years, seq(40, 80, by = 0.5), fm[, as.character(seq(40, 80, by = 0.5))], 
       col = grey(seq(1, 0, len = 100)))
 text(par("usr")[1] + 0.88 * diff(par("usr")[1:2]), par("usr")[3] + 0.9 * diff(par("usr")[3:4]), "Mature", cex = 1.5, font = 2)
-axis(4, at = apply(obj$report()$mu, 1, mean), labels = as.character(as.roman(4:(n_instar+3))))
+axis(4, at = apply(obj$report()$mu_mat, 1, mean), labels = as.character(as.roman(4:(n_instar+3))))
 box()
+hline(apply(obj$report()$mu_mat, 1, mean), col = "red", lty = "dashed")
 mtext("Carapace width (mm)", 2, 3, at = par("usr")[3], cex = 1.25)
 image(years, seq(5, 75, by = 0.5), fi[, as.character(seq(5, 75, by = 0.5))], 
       col = grey(seq(1, 0, len = 100)), yaxt = "n")
 mtext("Year", 1, 3, cex = 1.25)
 axis(2, at = seq(10, 70, by = 10))
 text(par("usr")[1] + 0.88 * diff(par("usr")[1:2]), par("usr")[3] + 0.9 * diff(par("usr")[3:4]), "Immature", cex = 1.5, font = 2)
+hline(apply(obj$report()$mu_imm, 1, mean), col = "red", lty = "dashed")
 box()
-axis(4, at = apply(obj$report()$mu, 1, mean), labels = as.character(as.roman(4:(n_instar+3))))
+axis(4, at = apply(obj$report()$mu_imm, 1, mean), labels = as.character(as.roman(4:(n_instar+3))))
 
+# Recruitment plot:
+gbarplot(exp(p$log_n_imm_instar_0), years, grid = TRUE)
 
+# Moulting probability:
+clg()
+dev.new(height = 8.5, width = 11)
+m <- kronecker(matrix(1:2, ncol = 1), matrix(1, ncol = 5, nrow = 5))
+m <- rbind(0,cbind(0, m, 0),0,0)
+layout(m)
+par(mar = c(0,0,0,0))
+p_mat <- obj$report()$p_mat
+gbarplot(p_mat[5, ], years[-length(years)], xlab = "", ylab =  "",  ylim = c(0, 1), xaxt = "n", grid = TRUE)
+mtext("Moult-to-maturity probability", 2, 2.5, at = 0, cex = 1.25)
+mtext("Instar VIII to IX", 4, 1.25, cex = 1.25)
+box()
+gbarplot(p_mat[6, ], years[-length(years)], xlab = "", ylab =  "", ylim = c(0, 1), grid = TRUE, yaxt = "n")
+mtext("Year", 1, 3.0, cex = 1.25)
+mtext("Instar IX to X", 4, 1.25, cex = 1.25)
+axis(2, at = seq(0, 0.8, by = 0.2))
+box()
 
+# Population abundance plot:
+clg()
+dev.new(height = 8.5, width = 11)
+m <- kronecker(matrix(1:2, ncol = 1), matrix(1, ncol = 5, nrow = 5))
+m <- rbind(0,cbind(0, m, 0),0,0)
+layout(m)
+par(mar = c(0,0,0,0))
+image(as.numeric(years), 4:(n_instar+3), t(obj$report()$n_imm), col = grey(seq(1, 0, len = 100)))
+text(par("usr")[1] + 0.88 * diff(par("usr")[1:2]), par("usr")[3] + 0.9 * diff(par("usr")[3:4]), "Immature", cex = 1.5, font = 2)
+box()
+mtext("Instar", 2, 3, at = par("usr")[3], cex = 1.25)
+image(as.numeric(years), 4:(n_instar+3), t(obj$report()$n_mat), col = grey(seq(1, 0, len = 100)))
+text(par("usr")[1] + 0.88 * diff(par("usr")[1:2]), par("usr")[3] + 0.9 * diff(par("usr")[3:4]), "Mature", cex = 1.5, font = 2)
+box()
+mtext("Year", 1, 3, cex = 1.25)
+box()
+
+# Growth models:
+alpha <- exp(parameters$log_hiatt_intercept)
+beta  <- exp(parameters$log_hiatt_slope)
+plot(c(0, xlim[2]), c(0, 30), type = "n", xlab = "", ylab = "", xaxs = "i", yaxs = "i")
+grid()
+abline(alpha[1], beta[1], col = "red", lwd = 2)
+abline(alpha[2], beta[2], col = "green", lwd = 2)
+mtext("Growth-per-moult", 2, 2.5, cex = 1.25)
+mtext("Carapace width (mm)", 1, 2.5, cex = 1.25)
+
+delta_mu <- parameters$log_mu_year
+dim(delta_mu) <- c(n_instar,n_year)
+image(delta_mu,  col = colorRampPalette(c("red", "white", "blue"))(100), zlim = c(-0.5, 0.5))

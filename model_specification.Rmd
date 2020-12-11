@@ -37,10 +37,6 @@ where $k$ indexes the instars, $x$ represents crab size, $\pi_k$ are the proport
 
 However, inference for larger instars is generally more uncertain owing to increasing variability in growth during adolescence, which resulting in size overlap between successive instars at these stages.
 
-
-
-
-
 ### Model Assumptions
 
 - Skip-moulters moult to maturity the following year.
@@ -99,4 +95,9 @@ with the superscripts $imm$ representing regular immatures, $skip$ representing 
 - Add vessel effect
 - Add mature growth modification   
 - Display histograms with immatures y and mature y + 1 
+- Add annual global scaling effect.
+- Improve instar variance fit for matures.
+- Improve growth mean fit for immature instars VIII and IX.
+- Implement log_mu_year which better controls variability within instars
+- Model seems to be growing adolescents too fast, but log_mu_year shrinks them back down ... an effort to....?
       

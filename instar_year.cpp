@@ -17,7 +17,8 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(log_growth_error);       // Growth increment error inflation parameters.
    PARAMETER_VECTOR(log_mu_year);            // Log-scale instar mean year interaction (n_instar x n_year).
    PARAMETER(log_sigma_mu_year);             // Instar mean year interaction error term.
-
+   PARAMETER(delta_mat);                     // Maturity growth scaling factor.
+   
    // Abundance parameters:
    PARAMETER_VECTOR(log_n_imm_year_0);       // First year immature instar abundances (n_instar-1).
    PARAMETER_VECTOR(log_n_imm_instar_0);     // First instar recruitment for all years (n_year).
@@ -39,7 +40,7 @@ template<class Type> Type objective_function<Type>::operator()(){
                    
    // Mortality parameters:
    PARAMETER(logit_M_imm);                   // Logit-scale immature mortality.
-   PARAMETER(logit_M_mat);                   // Logit-scale mature mortality.     
+   PARAMETER_VECTOR(logit_M_mat);            // Logit-scale mature mortality.     
    
    // Initialize log-likelihood:
    Type v = 0;
@@ -72,7 +73,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    for (int k = 0; k < n_instar; k++){
       for (int y = 0; y < n_year; y++){
          mu_imm(k,y) = exp(log(mu[k]) + log_mu_year[y * n_instar + k]);
-         mu_mat(k,y) = mu_imm(k,y); 
+         mu_mat(k,y) = exp(log(mu[k]) + log_mu_year[y * n_instar + k] + delta_mat);
       }
    }
   
@@ -137,15 +138,15 @@ template<class Type> Type objective_function<Type>::operator()(){
    
    // Mortality probabilities:
    Type M_imm = Type(1) / (Type(1) + exp(-logit_M_imm));         // Immature annual mortality.
-   Type M_mat = Type(1) / (Type(1) + exp(-logit_M_mat));         // Mature annual mortality.
+   vector<Type> M_mat = Type(1) / (Type(1) + exp(-logit_M_mat)); // Mature annual mortality.
   
    // Population dynamics equations:
    for (int k = 1; k < n_instar; k++){
       for (int y = 1; y < n_year; y++){
          n_imm(k,y) = (1-p_mat(k-1,y-1)) * (1-p_skp[k-1]) * (1-M_imm) * n_imm(k-1,y-1); 
          n_skp(k,y) = (1-p_mat(k-1,y-1)) * p_skp[k-1] * (1-M_imm) * n_imm(k,y-1);    
-         n_rec(k,y) = (1-M_mat) * ((1-p_skp[k-1]) * p_mat(k-1,y-1) * n_imm(k-1,y-1) + n_skp(k-1,y-1)); 
-         n_res(k,y) = (1-M_mat) * (n_rec(k,y-1) + n_res(k,y-1));    
+         n_rec(k,y) = (1-M_mat[0]) * ((1-p_skp[k-1]) * p_mat(k-1,y-1) * n_imm(k-1,y-1) + n_skp(k-1,y-1)); 
+         n_res(k,y) = (1-M_mat[1]) * (n_rec(k,y-1) + n_res(k,y-1));    
       }
    }
    for (int k = 0; k < n_instar; k++){
@@ -195,6 +196,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    
    // Export results:
    REPORT(mu_imm);
+   REPORT(mu_mat);
    REPORT(sigma);
    REPORT(p_skp);
    REPORT(p_mat);

@@ -11,29 +11,28 @@ update.parameters <- function(x, obj, fixed, random){
 
    # Update fixed parameters:
    vars <- unique(names(fixed))
-   for (i in 1:length(vars)){
-      d <- dim(x[[vars[i]]])
-      v <- fixed[which(names(fixed) == vars[i])]
-      if (length(v) == length(x[[vars[i]]])){
-         x[[vars[i]]] <- as.numeric(v)
-      }else{
-         print(paste0(vars[i], " problem."))
-         dim(x[[vars[i]]]) <- d
-      } 
+   if (length(vars) > 0){
+      for (i in 1:length(vars)){
+         v <- as.numeric(fixed[which(names(fixed) == vars[i])])
+         if ((length(v) == length(x[[vars[i]]])) | (length(v) == 1)){
+            dim(v) <- dim(x[[vars[i]]])
+            x[[vars[i]]] <- v
+         }else{
+            print(paste0(vars[i], " problem."))
+         } 
+      }
    }
    
    # Update random parameters:
    vars <- unique(names(random))
    if (length(vars) > 0){
       for (i in 1:length(vars)){
-         d <- dim(x[[vars[i]]])
-         v <- random[which(names(random) == vars[i])]
-         if (length(v) == length(x[[vars[i]]])){
-            print(v)
-            x[[vars[i]]] <- as.numeric(v)
+         v <- as.numeric(random[which(names(random) == vars[i])])
+         if ((length(v) == length(x[[vars[i]]])) | (length(v) == 1)){
+            dim(v) <- dim(x[[vars[i]]])
+            x[[vars[i]]] <- v
          }else{
             print(paste0(vars[i], " problem."))
-            dim(x[[vars[i]]]) <- d
          } 
       }
    }
