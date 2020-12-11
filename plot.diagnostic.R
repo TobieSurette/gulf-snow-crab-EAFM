@@ -1,6 +1,8 @@
 
 # Selectivity plot:
-# female trawl selectivity.png
+clg()
+file <- paste0(sex(sex), "_trawl_selectivity.pdf")
+pdf(file = file, width = 5, height = 5)
 p <- parameters
 t <- seq(0, 140, len = 1000)
 p0 <- 1 / (1 + exp(-exp(p$log_selectivity_slope[1])  * (t - p$selectivity_x50[1])));
@@ -13,11 +15,13 @@ grid()
 mtext("Carapace width(mm)", 1, 2.5, cex = 1.25) 
 mtext("Trawl selectivity", 2, 2.5, cex = 1.25) 
 box()
+dev.off()
 
 # female model and length-frequencies 2010-2020.pdf
 clg()
+file <- paste0(sex(sex), "_length-frequencies_", min(years), "-", max(years), ".pdf")
+pdf(file = file, width = 8.5, height = 11)
 p <- parameters
-dev.new(height = 11, width = 8.5)
 m <- kronecker(matrix(1:n_year, ncol = 3), matrix(1, ncol = 5, nrow = 5))
 m <- rbind(0,cbind(0, 0, m, 0),0, 0)
 layout(m)
@@ -27,31 +31,38 @@ for (i in 1:length(years)){
    eta <- obj$report()$eta_imm[ix]
    x <- data$x_imm[ix]
    f <- data$f_imm[ix]
-   plot(c(0, xlim[2]-10), c(0, 300), type = "n", xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n")
+   plot(c(0, xlim[2]-10), c(0, 700), type = "n", xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n")
    grid()
    lines(x, f, lwd = 2, col = "grey60")
    lines(x, eta, lwd = 2, col = "red")
    
-   # Matures
+   # Total matures:
    ix <- data$year_mat == years[i] - min(years)
-   eta <- obj$report()$eta_mat[ix]
-   x <- data$x_mat[ix]
-   f <- data$f_mat[ix]
-   lines(x, f, lwd = 2, col = "lightblue")
-   lines(x, eta, lwd = 2, col = "blue")
+   lines(data$x_mat[ix], data$f_mat[ix], lwd = 2, col = "lightblue")
+   lines(data$x_mat[ix], obj$report()$eta_mat[ix], lwd = 2, col = "blue")
    
+   # Mature recruitment:
+   ix <- data$year_rec == years[i] - min(years)
+   lines(data$x_rec[ix], data$f_rec[ix], lwd = 2, col = "lightblue")
+   lines(data$x_rec[ix], obj$report()$eta_rec[ix], lwd = 2, col = "blue")
+   
+   # Year label:
    text(par("usr")[1] + 0.85 * diff(par("usr")[1:2]),
         par("usr")[3] + 0.85 * diff(par("usr")[3:4]), years[i], cex = 1.25)
    box()
+   
+   # Axes with labels:
    if (i %in% ((n_year/3)*(1:3))) axis(1)
    if (i %in% 1:(n_year/3)) axis(2)
    if (i == 3) mtext("Density", 2, 2.5, cex = 1.4)
    if (i == round(2*n_year/3)) mtext("Carapace width(mm)", 1, 3, cex = 1.4)
 }
+dev.off()
 
 # Length-frequency data
 clg()
-dev.new(height = 8.5, width = 11)
+file <- paste0(sex(sex), "_length-frequencies_grey-scale_", min(years), "-", max(years), ".pdf")
+pdf(file = file, width = 8.5, height = 11)
 m <- kronecker(matrix(1:2, ncol = 1), matrix(1, ncol = 5, nrow = 5))
 m <- rbind(0,cbind(0, m, 0),0,0)
 layout(m)
@@ -71,9 +82,14 @@ text(par("usr")[1] + 0.88 * diff(par("usr")[1:2]), par("usr")[3] + 0.9 * diff(pa
 hline(apply(obj$report()$mu_imm, 1, mean), col = "red", lty = "dashed")
 box()
 axis(4, at = apply(obj$report()$mu_imm, 1, mean), labels = as.character(as.roman(4:(n_instar+3))))
+dev.off()
 
 # Recruitment plot:
+clg()
+file <- paste0(sex(sex), "_recruitment_", min(years), "-", max(years), ".pdf")
+pdf(file = file, width = 8.5, height = 11)
 gbarplot(exp(p$log_n_imm_instar_0), years, grid = TRUE)
+dev.off()
 
 # Moulting probability:
 clg()
@@ -119,6 +135,17 @@ abline(alpha[1], beta[1], col = "red", lwd = 2)
 abline(alpha[2], beta[2], col = "green", lwd = 2)
 mtext("Growth-per-moult", 2, 2.5, cex = 1.25)
 mtext("Carapace width (mm)", 1, 2.5, cex = 1.25)
+legend("topleft", c("Immature", "Adolescent"), lwd = 2, col = c("red", "green"), cex = 1.4)
+
+# Year effect
+gbarplot(obj$report()$year_effect)
+
+# Mortality:
+gbarplot(obj$report()$M_mat)
+
+# Mortality:
+gbarplot(obj$report()$n_mat)
+
 
 delta_mu <- parameters$log_mu_year
 dim(delta_mu) <- c(n_instar,n_year)

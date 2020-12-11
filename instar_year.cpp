@@ -31,7 +31,9 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(selectivity_x50);        // Size-at-50% trawl selectivity.
    PARAMETER_VECTOR(log_selectivity_slope);  // Log-scale trawl selectivity slope.
    PARAMETER(logit_selectivity_proportion);  
-       
+   PARAMETER_VECTOR(log_year_effect);        // Abundance year effect (n_year).
+   PARAMETER(log_sigma_year_effect);         // Log-scale year effect error parameter.
+         
    // Moulting probability parameters:
    PARAMETER_VECTOR(logit_p_skp);            // Logit-scale skip-moulting probabilities (n_instar-1).
    PARAMETER_VECTOR(logit_p_mat);            // Logit-scale moult-to-maturity probabilities (n_instar-1).
@@ -126,6 +128,10 @@ template<class Type> Type objective_function<Type>::operator()(){
       n_res(0,y) = 0;  
    }   
    
+   // Selectivity and year effects:
+   v -= sum(dnorm(log_year_effect, 0, exp(log_sigma_year_effect), true));
+   vector<Type> year_effect = exp(log_year_effect);
+      
    // Moulting probabilities:
    vector<Type> p_skp = Type(1) / (Type(1) + exp(-logit_p_skp)); // Skip-moulting probabilities.
    v -= sum(dnorm(logit_p_mat_year, 0, exp(log_sigma_p_mat_year), true)); 
@@ -165,7 +171,9 @@ template<class Type> Type objective_function<Type>::operator()(){
       Type w = Type(1) / (Type(1) + exp(-logit_selectivity_proportion));
       Type selectivity = w * p0 + (1-w) * p1;
       for (int k = 0; k < n_instar; k++){
-         eta_imm[i] += selectivity * (n_imm(k,year_imm[i]) + n_skp(k,year_imm[i])) * 
+         eta_imm[i] += year_effect[year_imm[i]] * 
+                       selectivity *
+                       (n_imm(k,year_imm[i]) + n_skp(k,year_imm[i])) * 
                        (pnorm(x_imm[i] + delta_x / 2, mu_imm(k,year_imm[i]), sigma[k]) - 
                         pnorm(x_imm[i] - delta_x / 2, mu_imm(k,year_imm[i]), sigma[k]));
       }
@@ -175,7 +183,9 @@ template<class Type> Type objective_function<Type>::operator()(){
    }
    
    // Likelihood evaluation for matures:
+   vector<Type> eta_rec(nm);
    vector<Type> eta_mat(nm);
+   eta_rec.fill(0);
    eta_mat.fill(0);
    for (int i = 0; i < nm; i++){ 
       // Define selectivity curve:
@@ -184,10 +194,16 @@ template<class Type> Type objective_function<Type>::operator()(){
       Type w = Type(1) / (Type(1) + exp(-logit_selectivity_proportion));
       Type selectivity = w * p0 + (1-w) * p1;
       for (int k = 0; k < n_instar; k++){
-         eta_mat[i] += selectivity * 
+         eta_mat[i] += year_effect[year_mat[i]] *
+                       selectivity * 
                        n_mat(k,year_mat[i]) * 
                       (pnorm(x_mat[i] + delta_x / 2, mu_mat(k,year_mat[i]), sigma[k]) - 
                        pnorm(x_mat[i] - delta_x / 2, mu_mat(k,year_mat[i]), sigma[k]));
+         eta_rec[i] += year_effect[year_mat[i]] *
+                       selectivity * 
+                       n_rec(k,year_mat[i]) * 
+                       (pnorm(x_mat[i] + delta_x / 2, mu_mat(k,year_mat[i]), sigma[k]) - 
+                        pnorm(x_mat[i] - delta_x / 2, mu_mat(k,year_mat[i]), sigma[k])); 
       }
       if (eta_mat[i] > 0){ 
          v -= dpois(f_mat[i], eta_mat[i], true);
@@ -206,9 +222,11 @@ template<class Type> Type objective_function<Type>::operator()(){
    REPORT(n_res);
    REPORT(n_mat);
    REPORT(eta_imm);
+   REPORT(eta_rec);
    REPORT(eta_mat);
    REPORT(M_imm);
    REPORT(M_mat);
+   REPORT(year_effect);
    
    return v;
 }
