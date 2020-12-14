@@ -41,8 +41,9 @@ However, inference for larger instars is generally more uncertain owing to incre
 
 - Skip-moulters moult to maturity the following year.
 - Skip-moulters only exist from instar IX and onward.
-- Matures exist only from instar IX onward.
 - Females have negligible amounts of skip-moulting.
+- Matures exist only from instar IX onward.
+- 
 
 ### Population dynamics equations
 
@@ -85,8 +86,6 @@ with the superscripts $imm$ representing regular immatures, $skip$ representing 
 ![Fitted selectivity curve for female snow crab](female trawl selectivity.png) 
 
 ![Annual probability of immature instar VIII moulting to mature IX for female snow crab](female moultring probability VIII to IX.png) 
-
-
 
 
 ## To do: 

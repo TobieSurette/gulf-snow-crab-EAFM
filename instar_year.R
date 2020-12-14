@@ -23,7 +23,8 @@ if (sex == 1){
    ylim <- c(0, 40)   
 }
 
-source("instar.year.data.R")
+# source("instar.year.data.R")
+load("females.2006-2020.rdata")
 
 # Work computer fix:
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:/Rtools/mingw_64/bin/")
@@ -58,6 +59,8 @@ parameters <- list(mu0                 = 10,                             # First
                    logit_M_imm = -1,                                     # Logit-scale immature mortality.
                    logit_M_mat = c(-1,-1))                               # Logit-scale mature mortality.  
 
+
+load("female.parameters.2006-2020.rdata")
 
 # Define random variables in model:
 random <- c("log_mu_year", "log_n_imm_instar_0", "logit_p_mat_year", "log_year_effect")
@@ -100,6 +103,8 @@ obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = ran
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
 parameters <- update.parameters(parameters, obj)
 
+parameters$log_selectivity_slope <- c(-1.100514, -1)
+
 # Add some growth parameters:
 map <- update.map(map, free = c("log_hiatt_slope", "log_hiatt_intercept", "log_sigma0"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
@@ -109,8 +114,11 @@ parameters <- update.parameters(parameters, obj)
 # Add annual growth parameters:
 map <- update.map(map, free = c("log_mu_year", "log_sigma_mu_year")) 
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
-obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
+obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 parameters <- update.parameters(parameters, obj)
+
+parameters$log_selectivity_slope <- c(-2.100514, -2)
+parameters$logit_M_mat<- c(0.13, 0.13)
 
 # Add first instar parameters:
 map <- update.map(map, free = "mu0") 

@@ -1,5 +1,6 @@
 # Define immature data:
 s <- read.scsset(years, survey = "regular", valid = 1)
+s$grid <- deg2grid(lon(s), lat(s))
 b <- read.scsbio(years, survey = "regular", sex = sex)
 b$tow.id <- tow.id(b)
 if (sex == 1) b$maturity <- morphometric.maturity(b) else b$maturity <- is.mature(b)
@@ -9,7 +10,9 @@ fvars <- names(s)[gsub("[0-9.]", "", names(s)) == ""]
 s[fvars] <- 1000000 * s[fvars] / repvec(s$swept.area, ncol = length(fvars))
 f_imm <- NULL
 for (i in 1:length(years)){
-  tmp <- apply(s[year(s) == years[i], fvars], 2, mean)
+  ss <- s[year(s) == years[i], c("grid", fvars)]
+  if (years[i] <= 2010) ss <- aggregate(ss[fvars], by = ss["grid"], mean)
+  tmp <- apply(ss[fvars], 2, mean)
   tmp[setdiff(as.character(seq(5, xlim[2]-20, by = step)), names(tmp))] <- 0
   tmp <- tmp[order(as.numeric(names(tmp)))]
   tmp <- t(tmp)
@@ -19,6 +22,7 @@ for (i in 1:length(years)){
 
 # Define skip data:
 s <- read.scsset(years, survey = "regular", valid = 1)
+s$grid <- deg2grid(lon(s), lat(s))
 b <- read.scsbio(years, survey = "regular", sex = sex)
 b$tow.id <- tow.id(b)
 if (sex == 1) b$maturity <- morphometric.maturity(b) else b$maturity <- is.mature(b)
@@ -28,7 +32,9 @@ fvars <- names(s)[gsub("[0-9.]", "", names(s)) == ""]
 s[fvars] <- 1000000 * s[fvars] / repvec(s$swept.area, ncol = length(fvars))
 f_skp <- NULL
 for (i in 1:length(years)){
-  tmp <- apply(s[year(s) == years[i], fvars], 2, mean)
+  ss <- s[year(s) == years[i], c("grid", fvars)]
+  if (years[i] <= 2010) ss <- aggregate(ss[fvars], by = ss["grid"], mean)
+  tmp <- apply(ss[fvars], 2, mean)
   tmp[setdiff(as.character(seq(5, xlim[2]-20, by = step)), names(tmp))] <- 0
   tmp <- tmp[order(as.numeric(names(tmp)))]
   tmp <- t(tmp)
@@ -38,6 +44,7 @@ for (i in 1:length(years)){
 
 # Define mature recruitment data:
 s <- read.scsset(years, survey = "regular", valid = 1)
+s$grid <- deg2grid(lon(s), lat(s))
 b <- read.scsbio(years, survey = "regular", sex = sex)
 b$tow.id <- tow.id(b)
 if (sex == 1) b$maturity <- morphometric.maturity(b) else b$maturity <- is.mature(b)
@@ -48,7 +55,9 @@ fvars <- names(s)[gsub("[0-9.]", "", names(s)) == ""]
 s[fvars] <- 1000000 * s[fvars] / repvec(s$swept.area, ncol = length(fvars))
 f_rec <- NULL
 for (i in 1:length(years)){
-  tmp <- apply(s[year(s) == years[i], fvars], 2, mean)
+  ss <- s[year(s) == years[i], c("grid", fvars)]
+  if (years[i] <= 2010) ss <- aggregate(ss[fvars], by = ss["grid"], mean)
+  tmp <- apply(ss[fvars], 2, mean)
   tmp[setdiff(as.character(seq(3, xlim[2]-20, by = step)), names(tmp))] <- 0
   tmp <- tmp[order(as.numeric(names(tmp)))]
   tmp <- t(tmp)
@@ -58,6 +67,7 @@ for (i in 1:length(years)){
 
 # Define mature residual data:
 s <- read.scsset(years, survey = "regular", valid = 1)
+s$grid <- deg2grid(lon(s), lat(s))
 b <- read.scsbio(years, survey = "regular", sex = sex)
 b$tow.id <- tow.id(b)
 if (sex == 1) b$maturity <- morphometric.maturity(b) else b$maturity <- is.mature(b)
@@ -68,7 +78,9 @@ fvars <- names(s)[gsub("[0-9.]", "", names(s)) == ""]
 s[fvars] <- 1000000 * s[fvars] / repvec(s$swept.area, ncol = length(fvars))
 f_res <- NULL
 for (i in 1:length(years)){
-  tmp <- apply(s[year(s) == years[i], fvars], 2, mean)
+  ss <- s[year(s) == years[i], c("grid", fvars)]
+  if (years[i] <= 2010) ss <- aggregate(ss[fvars], by = ss["grid"], mean) 
+  tmp <- apply(ss[fvars], 2, mean)
   tmp[setdiff(as.character(seq(3, xlim[2]-20, by = step)), names(tmp))] <- 0
   tmp <- tmp[order(as.numeric(names(tmp)))]
   tmp <- t(tmp)
@@ -79,13 +91,12 @@ for (i in 1:length(years)){
 # Total matures:
 f_mat <- f_rec + f_res
 
-  
 # Define data:
 data <- list(x_imm    = as.numeric(repvec(as.numeric(colnames(f_imm)), nrow = nrow(f_imm))),
              f_imm    = as.numeric(f_imm),
              year_imm = as.numeric(repvec(as.numeric(rownames(f_imm)), ncol = ncol(f_imm))) - min(years),
-             
-             x_skp    = as.numeric(repvec(as.numeric(colnames(f_skp)), nrow = nrow(f_skp))),
+            
+              x_skp    = as.numeric(repvec(as.numeric(colnames(f_skp)), nrow = nrow(f_skp))),
              f_skp    = as.numeric(f_rec),
              year_skp = as.numeric(repvec(as.numeric(rownames(f_skp)), ncol = ncol(f_skp))) - min(years),
              
@@ -103,4 +114,5 @@ data <- list(x_imm    = as.numeric(repvec(as.numeric(colnames(f_imm)), nrow = nr
              
              delta_x  = step)
 
+save(data, file = "females.2006-2020.rdata")
 

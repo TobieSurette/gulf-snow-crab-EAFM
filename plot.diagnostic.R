@@ -31,7 +31,7 @@ for (i in 1:length(years)){
    eta <- obj$report()$eta_imm[ix]
    x <- data$x_imm[ix]
    f <- data$f_imm[ix]
-   plot(c(0, xlim[2]-10), c(0, 700), type = "n", xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n")
+   plot(c(0, xlim[2]-10), c(0, 300), type = "n", xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n")
    grid()
    lines(x, f, lwd = 2, col = "grey60")
    lines(x, eta, lwd = 2, col = "red")
@@ -47,7 +47,7 @@ for (i in 1:length(years)){
    lines(data$x_rec[ix], obj$report()$eta_rec[ix], lwd = 2, col = "blue")
    
    # Year label:
-   text(par("usr")[1] + 0.85 * diff(par("usr")[1:2]),
+   text(par("usr")[1] + 0.10 * diff(par("usr")[1:2]),
         par("usr")[3] + 0.85 * diff(par("usr")[3:4]), years[i], cex = 1.25)
    box()
    
@@ -138,13 +138,52 @@ mtext("Carapace width (mm)", 1, 2.5, cex = 1.25)
 legend("topleft", c("Immature", "Adolescent"), lwd = 2, col = c("red", "green"), cex = 1.4)
 
 # Year effect
-gbarplot(obj$report()$year_effect)
+gbarplot(obj$report()$year_effect, years, xaxt = "n")
 
+
+   
 # Mortality:
 gbarplot(obj$report()$M_mat)
 
 # Mortality:
 gbarplot(obj$report()$n_mat)
+
+
+
+plot(years, obj$report()$mu_imm[2, ])
+plot(years, obj$report()$mu_imm[3, ])
+plot(years, obj$report()$mu_imm[4, ])
+plot(years, obj$report()$mu_imm[5, ])
+plot(years, obj$report()$mu_imm[6, ])
+plot(years, obj$report()$mu_mat[7, ])
+
+# Immature growth anomalies:
+delta <- obj$report()$mu_imm - repvec(apply(obj$report()$mu_imm, 1, median), ncol = n_year)
+image(years, 4:(n_instar+3), t(delta), col = colorRampPalette(c("red", "white", "blue"))(100), 
+      zlim = c(-5, 5), xlab = "", ylab = "")
+mtext("Years", 1, 2.5, cex = 1.25)
+mtext("Instars", 2, 2.5, cex = 1.25)
+   
+# Mature growth anomalies:
+delta <- obj$report()$mu_mat - repvec(apply(obj$report()$mu_mat, 1, median), ncol = n_year)
+image(years, 4:(n_instar+3), t(delta), col = colorRampPalette(c("red", "white", "blue"))(100), 
+      zlim = c(-5, 5), xlab = "", ylab = "")
+mtext("Years", 1, 2.5, cex = 1.25)
+mtext("Instars", 2, 2.5, cex = 1.25)
+
+# Immature instar means:
+image(years, 4:(n_instar+3), t(obj$report()$mu_imm), col = colorRampPalette(c("red", "white", "blue"))(100), 
+      zlim = c(0, 65), xlab = "", ylab = "")
+mtext("Years", 1, 2.5, cex = 1.25)
+mtext("Instars", 2, 2.5, cex = 1.25)
+
+# Mature instar means:
+image(years, 4:(n_instar+3), t(obj$report()$mu_mat), col = colorRampPalette(c("red", "white", "blue"))(100), 
+      zlim = c(0, 70), xlab = "", ylab = "")
+mtext("Years", 1, 2.5, cex = 1.25)
+mtext("Instars", 2, 2.5, cex = 1.25)
+
+
 
 
 delta_mu <- parameters$log_mu_year
