@@ -61,6 +61,7 @@ parameters <- list(mu0                 = 10,                             # First
 
 
 load("female.parameters.2006-2020.rdata")
+parameters$log_year_effect <- rep(0, length(parameters$log_year_effect))
 
 # Define random variables in model:
 random <- c("log_mu_year", "log_n_imm_instar_0", "logit_p_mat_year", "log_year_effect")
@@ -71,51 +72,54 @@ map <- lapply(parameters, function(x) factor(rep(NA, length(x))))
 map <- update.map(map, free = c("log_n_imm_instar_0", "log_n_imm_year_0", "log_n_skp_instar_0", "log_n_rec_instar_0", "log_n_res_instar_0", "log_sigma_n_imm_instar_0"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
-parameters <- update.parameters(parameters, obj)
+parameters <- update.parameters(parameters, obj, map = map)
 
 # Add mortality parameters:
 map <- update.map(map, free = c("logit_M_mat","logit_M_imm"))
+map$logit_M_mat <- factor(rep(1, 2))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
-obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
-parameters <- update.parameters(parameters, obj)
+obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+parameters <- update.parameters(parameters, obj, map = map)
 
 # Add selectivity parameters:
 map <- update.map(map, free = c("selectivity_x50", "log_selectivity_slope", "logit_selectivity_proportion"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
-obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
-parameters <- update.parameters(parameters, obj)
+obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+parameters <- update.parameters(parameters, obj, map = map)
 
 # Add moult to maturity parameters:
 map <- update.map(map, free = c("logit_p_mat", "logit_p_mat_year", "log_sigma_p_mat_year"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
-parameters <- update.parameters(parameters, obj)
+parameters <- update.parameters(parameters, obj, map = map)
 
 # Add year effect parameters:
-map <- update.map(map, free = c("log_sigma_year_effect", "log_year_effect"))
+map <- update.map(map, free = c("log_sigma_year_effect"))
+parameters$log_year_effect[length(parameters$log_year_effect)] <- 0
+map$log_year_effect <- factor(c(1:(length(parameters$log_year_effect)-1 ), NA))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
-parameters <- update.parameters(parameters, obj)
+parameters <- update.parameters(parameters, obj, map = map)
 
 # Add instar error parameter:
 map <- update.map(map, free = c("log_growth_error")) 
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
-parameters <- update.parameters(parameters, obj)
+parameters <- update.parameters(parameters, obj, map = map)
 
-parameters$log_selectivity_slope <- c(-1.100514, -1)
+#parameters$log_selectivity_slope <- c(-1.100514, -1)
 
 # Add some growth parameters:
 map <- update.map(map, free = c("log_hiatt_slope", "log_hiatt_intercept", "log_sigma0"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
-parameters <- update.parameters(parameters, obj)
+parameters <- update.parameters(parameters, obj, map = map)
 
 # Add annual growth parameters:
 map <- update.map(map, free = c("log_mu_year", "log_sigma_mu_year")) 
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
-parameters <- update.parameters(parameters, obj)
+parameters <- update.parameters(parameters, obj, map = map)
 
 parameters$log_selectivity_slope <- c(-2.100514, -2)
 parameters$logit_M_mat<- c(0.13, 0.13)
@@ -124,7 +128,7 @@ parameters$logit_M_mat<- c(0.13, 0.13)
 map <- update.map(map, free = "mu0") 
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
-parameters <- update.parameters(parameters, obj)
+parameters <- update.parameters(parameters, obj, map = map)
 
 
 #delta_mat

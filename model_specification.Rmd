@@ -12,11 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Source data for the model came from the annual snow crab survey.
 
-Length-frequencies standized by trawl swept area were calculated by survey year, sex and morphometric maturity.
+Length-frequencies standardized by trawl swept area were calculated by survey year, sex and morphometric maturity.
 
-For the purposes of evaluating and developping the snow crab model, the time series was limited to the period from  2006 to 2020, owing to the spatial homogeneity of the sampling design during this period. The survey was marginally expanded in 2011 and this will need to be considered when interpreting the model results.
+For the purposes of evaluating and developing the snow crab model, the time series was limited to the period from  2006 to 2020, owing to the spatial homogeneity of the sampling design during this period. The survey was marginally expanded in 2011 and this will need to be considered when interpreting the model results.
 
-The time series will be extended in future version of the model into past surveys where changing survey area and heterogenous spatial distributions may lead to some degree of scaling issues, which will hopefully be corrected by the model.
+The time series will be extended in future version of the model into past surveys where changing survey area and heterogeneous spatial distributions may lead to some degree of scaling issues, which will hopefully be corrected by the model.
 
 ## Model
 

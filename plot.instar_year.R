@@ -137,6 +137,14 @@ mtext("Growth-per-moult", 2, 2.5, cex = 1.25)
 mtext("Carapace width (mm)", 1, 2.5, cex = 1.25)
 legend("topleft", c("Immature", "Adolescent"), lwd = 2, col = c("red", "green"), cex = 1.4)
 
+# Alunno-Bruscia & Sainte-Marie (1998) 
+# Immatures (from settlement to onset of physiological maturation, PM): CW i+1 = 1.429 CW i – 0.227
+#Prepubescent stage ɛ (from onset of PM to next prepubescent stage): CW i+1 = 1.246 CW i – 2.864
+#Prepubescent stage ɸ (from prepubescent stage ɛ to pubescent): CW i+1 = 0.828 CW i – 20.585
+#Pubescent to maturity: CW i+1 = 1.071 CW i – 5.099
+
+
+
 # Year effect
 gbarplot(obj$report()$year_effect, years, xaxt = "n")
 
