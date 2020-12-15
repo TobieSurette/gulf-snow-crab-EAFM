@@ -28,6 +28,29 @@ being instars I up to VII or VIII, characterized by high relative grow rates, fo
 Instars I, II and III are too small to be caught by the survey. 
 Instar IV crab are sometimes caught in small amounts.
 
+
+### Growth-at-moult
+
+Population instars were assumed to follow a Gaussian distribution curve with specified mean and error. Means for successive instars  instar was defined iteratively as follows, allowing for known differences in growth between immature and pubescent (adolescent?):
+$$
+   \mu_{k+1} = \alpha_{imm}\mu_{k} + \beta_{imm}, \text{ for }  k \le 7  \\
+   \mu_{k+1} = \alpha_{ado}\mu_{k} + \beta_{ado}, \text{ for }  k > 7  \\
+$$
+where $\mu_{k}$ is the mean for the $k^{th}$ instar,  $\alpha_{imm}$ and $\beta_{ado}$ are Hiatt slope and intercept parameters, respectively for immature crab, and $\alpha_{ado}$ and $\beta_{ado}$ are the corresponding parameters for the adolescent maturity phase.
+
+Instar standard errors are similarly defined, but allow for additional error inflation in the form of two positive parameters $\gamma_{imm}$ and $\gamma_{ado}$ to allow for extra error in the growth process:
+
+$$
+   \sigma_{k+1} = (\alpha_{imm} + \gamma_{imm}) \sigma_{k}, \text{ for } k \le 7  \text{ and }  \gamma_{imm} > 0 \\
+   \sigma_{k+1} = (\alpha_{ado} + \gamma_{ado}) \sigma_{k}, \text{ for } k > 7  \text{ and }  \gamma_{ado} > 0 \\   
+$$
+For mature crab, we simply include an additive term for 
+
+$$
+   \mu_{k}^{mat} = \mu_{k}^{ado} + \Delta_{mat}
+$$
+where we expect that $\Delta_{mat} < 0$, based on biological considerations.
+
 Inferences on growth-at-moult can often be obtained from analysis of these modes and the approach has traditionally been to treat the data as arising from finite mixture model with probability density of the form:
 
 $$
