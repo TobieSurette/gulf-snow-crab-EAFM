@@ -35,12 +35,12 @@ dyn.load(dynlib("instar_year"))
 # Define initial parameters:
 parameters <- list(mu0                 = 10,                             # First instar mean size.
                    log_sigma0          = log(0.8),                       # Log-scale standard error for first instar.
-                   log_hiatt_slope     = log(c(0.350, 0.0920)),          # Hiatt slope parameters.
-                   log_hiatt_intercept = log(c(0.689, 10.000)),           # Hiatt intercept parameters.
-                   log_growth_error    = log(c(0.01, 0.10)),             # Growth increment error inflation parameters.
+                   log_hiatt_slope     = log(c(0.350, 0.055)),           # Hiatt slope parameters.
+                   log_hiatt_intercept = log(c(0.689, 10.000)),          # Hiatt intercept parameters.
+                   log_growth_error    = log(c(0.01, 0.25)),             # Growth increment error inflation parameters.
                    log_mu_year         = rep(0, n_instar * n_year),      # Log-scale instar mean year interaction (n_instar x n_year).
                    log_sigma_mu_year   = -3,                             # Instar mean year interaction error term.
-                   delta_mat = -3, 
+                   delta_mat = -1.5, 
                    log_n_imm_year_0    = rep(4, n_instar-1),             # First year immature instar abundances (n_instar-1).
                    log_n_imm_instar_0  = rep(4, n_year),                 # First instar recruitment for all years (n_year).
                    log_sigma_n_imm_instar_0 = -1,                        # Log-scale first instar annual recruitment error parameter.
@@ -56,7 +56,7 @@ parameters <- list(mu0                 = 10,                             # First
                    logit_p_mat_year = rep(0, (n_instar-1) * (n_year-1)), # Logit-scale mout-to-maturity instar x year interaction (n_instar x n_year).
                    log_sigma_p_mat_year = -1,                            # Moult-to-maturity instar x year interaction error term.
                    logit_M_imm = -1,                                     # Logit-scale immature mortality.
-                   logit_M_mat = c(-1,-1))                               # Logit-scale mature mortality.  
+                   logit_M_mat = c(-1.10, -1.73))                        # Logit-scale mature mortality.  
 
 
 load("female.parameters.2006-2020.rdata")
@@ -105,14 +105,17 @@ obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = ran
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
+
+parameters$logit_M_mat <- c(-1.10, -1.73)
+
 # Add instar error parameter:
 map <- update.map(map, free = c("log_growth_error")) 
 obj <- MakeADFun(data[data.vars], parameters, DLL = "instar_year",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
-parameters$log_hiatt_slope <- c(-1.049822, -2.385967)
-parameters$log_hiatt_intercept <- c( -0.372514,  2.302585)
+#parameters$log_hiatt_slope <- c(-1.049822, -2.385967)
+#parameters$log_hiatt_intercept <- c( -0.372514,  2.302585)
 #parameters$log_selectivity_slope <- c(-1.100514, -1)
 
 # Add some growth parameters:

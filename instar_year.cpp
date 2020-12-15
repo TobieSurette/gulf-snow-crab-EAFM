@@ -148,10 +148,10 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Population dynamics equations:
    for (int k = 1; k < n_instar; k++){
       for (int y = 1; y < n_year; y++){
-         n_imm(k,y) = (1-p_mat(k-1,y-1)) * (1-p_skp[k-1]) * (1-M_imm) * n_imm(k-1,y-1); 
-         n_skp(k,y) = (1-p_mat(k-1,y-1)) * p_skp[k-1] * (1-M_imm) * n_imm(k,y-1);    
-         n_rec(k,y) = (1-M_mat[0]) * ((1-p_skp[k-1]) * p_mat(k-1,y-1) * n_imm(k-1,y-1) + n_skp(k-1,y-1)); 
-         n_res(k,y) = (1-M_mat[1]) * (n_rec(k,y-1) + n_res(k,y-1));    
+         n_imm(k,y) = (Type(1)-p_mat(k-1,y-1)) * (Type(1)-p_skp[k-1]) * (1-M_imm) * n_imm(k-1,y-1); 
+         n_skp(k,y) = (Type(1)-p_mat(k-1,y-1)) * p_skp[k-1] * (1-M_imm) * n_imm(k,y-1);    
+         n_rec(k,y) = (Type(1)-M_mat[0]) * ((Type(1)-p_skp[k-1]) * p_mat(k-1,y-1) * n_imm(k-1,y-1) + n_skp(k-1,y-1)); 
+         n_res(k,y) = (Type(1)-M_mat[1]) * (n_rec(k,y-1) + n_res(k,y-1));    
       }
    }
    for (int k = 0; k < n_instar; k++){
