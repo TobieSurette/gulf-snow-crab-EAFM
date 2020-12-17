@@ -37,11 +37,15 @@ for (i in 1:length(years)){
    ix <- data$year_mat == years[i] - min(years)
    lines(data$x_mat[ix], data$f_mat[ix], lwd = 2, col = "lightblue")
    lines(data$x_mat[ix], obj$report()$eta_mat[ix], lwd = 2, col = "blue")
+
+   vline(obj$report()$mu_imm[1:6,i], lty = "dashed", col = "red")
    
    # Mature recruitment:
    ix <- data$year_rec == years[i] - min(years)
    lines(data$x_rec[ix], data$f_rec[ix], lwd = 2, col = "lightblue")
    lines(data$x_rec[ix], obj$report()$eta_rec[ix], lwd = 2, col = "blue")
+   
+   vline(obj$report()$mu_mat[6:7,i,1], lty = "dashed", col = "blue")
    
    # Year label:
    text(par("usr")[1] + 0.15 * diff(par("usr")[1:2]),
@@ -209,7 +213,7 @@ plot(years, obj$report()$mu_imm[7, ])
 # Immature growth anomalies:
 delta <- obj$report()$mu_imm - repvec(obj$report()$mu, ncol = n_year)
 image(years, 4:(n_instar+3), t(delta), col = colorRampPalette(c("red", "white", "blue"))(100), 
-      zlim = c(-10, 10), xlab = "", ylab = "")
+      zlim = c(-5, 5), xlab = "", ylab = "")
 mtext("Years", 1, 2.5, cex = 1.25)
 mtext("Instars", 2, 2.5, cex = 1.25)
    
