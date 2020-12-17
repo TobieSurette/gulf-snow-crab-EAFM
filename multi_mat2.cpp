@@ -173,7 +173,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    } 
    
    // Year effects:
-   v -= sum(dnorm(log_year_effect, 0, exp(log_sigma_year_effect), true));
+   v -= sum(dnorm(log_year_effect, Type(0), exp(log_sigma_year_effect), true));
    vector<Type> year_effect = exp(log_year_effect);
    
    // Likelihood evaluation for immatures:
