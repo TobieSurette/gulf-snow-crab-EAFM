@@ -16,7 +16,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(log_hiatt_intercept);    // Hiatt intercept parameters.
    PARAMETER_VECTOR(log_growth_error);       // Growth increment error inflation parameters.
    PARAMETER_VECTOR(log_mu_year);            // Log-scale instar mean year interaction (n_instar x n_year).
-   PARAMETER(log_sigma_mu_year);             // Instar mean year interaction error term.
+   PARAMETER_VECTOR(log_sigma_mu_year);      // Instar mean year interaction error term (n_instar).
    PARAMETER(delta_mat);                     // Maturity growth scaling factor.
    
    // Abundance parameters:
@@ -24,9 +24,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(log_n_imm_instar_0);     // First instar recruitment for all years (n_year).
    PARAMETER(log_sigma_n_imm_instar_0);      // Log-scale first instar annual recruitment error parameter.
    PARAMETER_VECTOR(log_n_skp_instar_0);     // First year skip abundances (n_instar - 5).
-   // PARAMETER_VECTOR(log_n_rec_instar_0);     // First year mature recruit abundances (n_instar - 5).
    PARAMETER_VECTOR(log_n_mat_instar_0);     // Mature abundances for first year ((n_instar-5) x 6).  
-   // PARAMETER_VECTOR(log_n_res_instar_0);     // First year mature residual abundances (n_instar - 5).
    
    // Selectivity parameters:
    PARAMETER(selectivity_x50);               // Size-at-50% trawl selectivity.
@@ -37,7 +35,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Moulting probability parameters:
    PARAMETER_VECTOR(logit_p_skp);            // Logit-scale skip-moulting probabilities (n_instar-1).
    PARAMETER_VECTOR(logit_p_mat);            // Logit-scale moult-to-maturity probabilities (n_instar-1).
-   PARAMETER_VECTOR(logit_p_mat_year);       // Logit-scale mout-to-maturity instar x year interaction (n_instar-1 x n_year-1).
+   PARAMETER_VECTOR(logit_p_mat_year);       // Logit-scale mout-to-maturity instar x year interaction (n_instar-2 x n_year-1).
    PARAMETER(log_sigma_p_mat_year);          // Moult-to-maturity instar x year interaction error term.
    
    // Mortality parameters:
@@ -69,7 +67,11 @@ template<class Type> Type objective_function<Type>::operator()(){
    vector<Type> sigma = exp(log_sigma);
    
    // Annual instar sizes for immatures:
-   v -= sum(dnorm(log_mu_year, 0, exp(log_sigma_mu_year), true));
+   for (int k = 0; k < n_instar; k++){
+      for (int y = 0; y < n_year; y++){
+         v -= dnorm(log_mu_year[y * n_instar + k], Type(0), exp(log_sigma_mu_year[k]), true);
+      }
+   }
    matrix<Type> mu_imm(n_instar,n_year);
    for (int k = 0; k < n_instar; k++){
       for (int y = 0; y < n_year; y++){
@@ -77,14 +79,14 @@ template<class Type> Type objective_function<Type>::operator()(){
       }
    }   
    
-   // Define mature recruitment sizes for all years:
+   // Define mature instar sizes for recruitment and first year:
    array<Type> mu_mat(n_instar,n_year,6);
    for (int k = 0; k < n_instar; k++){
       for (int m = 0; m < 6; m++){
          mu_mat(k,0,m) = mu_imm(k,0) + delta_mat; // Set identical mature instar sizes for first year.
       }
       for (int y = 1; y < n_year; y++){
-         mu_mat(k,y,0) = mu_imm(k,y) + delta_mat; // Recruitment size for subsequent years.
+         mu_mat(k,y,0) = mu_imm(k,y) + delta_mat; // Recruitment sizes for subsequent years.
       }
    }  
    
@@ -96,20 +98,6 @@ template<class Type> Type objective_function<Type>::operator()(){
          }
       }
    }
-   
-   // Moulting probabilities:
-   vector<Type> p_skp = Type(1) / (Type(1) + exp(-logit_p_skp)); // Skip-moulting probabilities.
-   v -= sum(dnorm(logit_p_mat_year, 0, exp(log_sigma_p_mat_year), true)); 
-   matrix<Type> p_mat(n_instar-1, n_year-1);
-   for (int k = 0; k < (n_instar-1); k++){
-      for (int y = 0; y < (n_year-1); y++){
-         p_mat(k,y) = Type(1) / (Type(1) + exp(-logit_p_mat[k] - logit_p_mat_year[y * (n_instar-1) + k]));
-      }
-   }
-   
-   // Mortality proportions:
-   Type M_imm = Type(1) / (Type(1) + exp(-logit_M_imm));         // Immature annual mortality.
-   vector<Type> M_mat = Type(1) / (Type(1) + exp(-logit_M_mat)); // Mature annual mortality.
    
    // Population abundance variables:
    matrix<Type> n_imm(n_instar,n_year);   // Immatures.
@@ -150,6 +138,21 @@ template<class Type> Type objective_function<Type>::operator()(){
       }
    }
    
+   // Moulting probabilities:
+   vector<Type> p_skp = Type(1) / (Type(1) + exp(-logit_p_skp)); // Skip-moulting probabilities.
+   v -= sum(dnorm(logit_p_mat_year, 0, exp(log_sigma_p_mat_year), true)); 
+   matrix<Type> p_mat(n_instar-1, n_year-1);
+   for (int y = 0; y < (n_year-1); y++){
+      for (int k = 0; k < (n_instar-2); k++){
+         p_mat(k,y) = Type(1) / (Type(1) + exp(-logit_p_mat[k] - logit_p_mat_year[k * (n_year-1) + y]));
+      }
+      p_mat(n_instar-2,y) = 1; // Second-to-last instar moults to marturity.
+   }
+   
+   // Mortality probabilities:
+   Type M_imm = Type(1) / (Type(1) + exp(-logit_M_imm));         // Immature annual mortality.
+   vector<Type> M_mat = Type(1) / (Type(1) + exp(-logit_M_mat)); // Mature annual mortality.
+   
    // Population dynamics equations:
    for (int k = 1; k < n_instar; k++){
       for (int y = 1; y < n_year; y++){
@@ -169,38 +172,9 @@ template<class Type> Type objective_function<Type>::operator()(){
       }
    } 
    
-   // Selectivity and year effects:
+   // Year effects:
    v -= sum(dnorm(log_year_effect, 0, exp(log_sigma_year_effect), true));
    vector<Type> year_effect = exp(log_year_effect);
-   
-   // Moulting probabilities:
-   vector<Type> p_skp = Type(1) / (Type(1) + exp(-logit_p_skp)); // Skip-moulting probabilities.
-   v -= sum(dnorm(logit_p_mat_year, 0, exp(log_sigma_p_mat_year), true)); 
-   matrix<Type> p_mat(n_instar-1, n_year-1);
-   for (int k = 0; k < (n_instar-1); k++){
-      for (int y = 0; y < (n_year-1); y++){
-         p_mat(k,y) = Type(1) / (Type(1) + exp(-logit_p_mat[k] - logit_p_mat_year[y * (n_instar-1) + k]));
-      }
-   }
-   
-   // Mortality probabilities:
-   Type M_imm = Type(1) / (Type(1) + exp(-logit_M_imm));         // Immature annual mortality.
-   vector<Type> M_mat = Type(1) / (Type(1) + exp(-logit_M_mat)); // Mature annual mortality.
-   
-   // Population dynamics equations:
-   for (int k = 1; k < n_instar; k++){
-      for (int y = 1; y < n_year; y++){
-         n_imm(k,y) = (Type(1)-p_mat(k-1,y-1)) * (Type(1)-p_skp[k-1]) * (1-M_imm) * n_imm(k-1,y-1); 
-         n_skp(k,y) = (Type(1)-p_mat(k-1,y-1)) * p_skp[k-1] * (1-M_imm) * n_imm(k,y-1);    
-         n_rec(k,y) = (Type(1)-M_mat[0]) * ((Type(1)-p_skp[k-1]) * p_mat(k-1,y-1) * n_imm(k-1,y-1) + n_skp(k-1,y-1)); 
-         n_res(k,y) = (Type(1)-M_mat[1]) * (n_rec(k,y-1) + n_res(k,y-1));    
-      }
-   }
-   for (int k = 0; k < n_instar; k++){
-      for (int y = 0; y < n_year; y++){
-         n_mat(k,y) = n_rec(k,y) + n_res(k,y); 
-      }
-   }
    
    // Likelihood evaluation for immatures:
    vector<Type> eta_imm(ni);
@@ -233,13 +207,16 @@ template<class Type> Type objective_function<Type>::operator()(){
       
       // Loop over instars:
       for (int k = 0; k < n_instar; k++){
+         // Calculate recruitment:
          eta_rec[i] += n_mat(k,year_mat[i],0) * 
-            (pnorm(x_mat[i] + delta_x / 2, mu_mat(k,year_mat[i],0), sigma[k]) - 
-            pnorm(x_mat[i] - delta_x / 2, mu_mat(k,year_mat[i],0), sigma[k]));      
+                       (pnorm(x_mat[i] + delta_x / 2, mu_mat(k,year_mat[i],0), sigma[k]) - 
+                        pnorm(x_mat[i] - delta_x / 2, mu_mat(k,year_mat[i],0), sigma[k]));      
+         
+         // Cumulate residual classes:
          for (int m = 1; m < 6; m++){
             eta_res[i] += n_mat(k,year_mat[i],m) * 
-               (pnorm(x_mat[i] + delta_x / 2, mu_mat(k,year_mat[i],m), sigma[k]) - 
-               pnorm(x_mat[i] - delta_x / 2, mu_mat(k,year_mat[i],m), sigma[k]));
+                          (pnorm(x_mat[i] + delta_x / 2, mu_mat(k,year_mat[i],m), sigma[k]) - 
+                           pnorm(x_mat[i] - delta_x / 2, mu_mat(k,year_mat[i],m), sigma[k]));
          }
          
          // Add year effects and selectivity adjustments:
@@ -265,8 +242,6 @@ template<class Type> Type objective_function<Type>::operator()(){
    REPORT(p_mat);
    REPORT(n_imm);
    REPORT(n_skp);
-   REPORT(n_rec);
-   REPORT(n_res);
    REPORT(n_mat);
    REPORT(eta_imm);
    REPORT(eta_rec);
