@@ -20,7 +20,6 @@ if (sex == 1){
 }else{
    n_instar <- 7
    xlim <- c(0, 100)
-   ylim <- c(0, 40)   
    ylim <- c(0, 40)
 }
 
@@ -38,9 +37,6 @@ parameters <- list(mu0                 = 10,                             # First
                    log_hiatt_slope     = log(c(0.350, 0.055)),           # Hiatt slope parameters.
                    log_hiatt_intercept = log(c(0.689, 10.000)),          # Hiatt intercept parameters.
                    log_growth_error    = log(c(0.01, 0.25)),             # Growth increment error inflation parameters.
-                   log_mu_year         = rep(0, n_instar * n_year),      # Log-scale instar mean year interaction (n_instar x n_year).
-                   log_sigma_mu_year   = log(c(0.5,0.75,1,1,1.5,2,3)),   # Instar mean year interaction error term.
-                   delta_mat = -1.5, 
                    mu_year_instar      = rep(0, n_instar * n_year),      # Log-scale instar mean year interaction (n_instar x n_year).
                    log_sigma_mu_year_instar   = log(c(1,1,1,1,1.5,2,3)),        # Instar mean year interaction error term.
                    delta_mat = 0,
@@ -58,6 +54,7 @@ parameters <- list(mu0                 = 10,                             # First
                    logit_p_mat_year = rep(0, (n_instar-2) * (n_year-1)), # Logit-scale mout-to-maturity instar x year interaction (n_instar x n_year).
                    log_sigma_p_mat_year = -1,                            # Moult-to-maturity instar x year interaction error term.
                    logit_M_imm = -1,                                     # Logit-scale immature mortality.
+                   logit_M_mat = c(-1.10, -1.73))                        # Logit-scale mature mortality.
 
 
 parameters$log_hiatt_slope <- log(c(0.38619475, 0.05))
@@ -70,9 +67,9 @@ parameters$delta_mat <- -1.5
 parameters$log_year_effect <- rep(0, n_year)
 
 # Define random variables in model:
-random <- c("log_mu_year", "log_n_imm_instar_0", "logit_p_mat_year", "log_year_effect")
+random <- c("mu_year_instar", "log_n_imm_instar_0", "logit_p_mat_year", "log_year_effect")
 data.vars <- names(data)[-grep("(rec)|(res)|(skp)", names(data))]
-   
+
 # Initialize parameter mapping:
 map <- lapply(parameters, function(x) factor(rep(NA, length(x))))
 
@@ -110,7 +107,6 @@ obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
 # Add annual growth parameters:
-map <- update.map(map, free = c("log_mu_year")) 
 map <- update.map(map, free = c("mu_year_instar"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
@@ -123,7 +119,6 @@ obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
 # Add instar error parameter:
-map <- update.map(map, free = c("log_growth_error")) 
 map <- update.map(map, free = c("log_growth_error"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
@@ -136,10 +131,8 @@ obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
 # Add annual growth parameters:
-map <- update.map(map, free = "log_sigma_mu_year") 
 map <- update.map(map, free = "log_sigma_mu_year_instar")
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
-obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
