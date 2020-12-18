@@ -37,11 +37,15 @@ for (i in 1:length(years)){
    ix <- data$year_mat == years[i] - min(years)
    lines(data$x_mat[ix], data$f_mat[ix], lwd = 2, col = "lightblue")
    lines(data$x_mat[ix], obj$report()$eta_mat[ix], lwd = 2, col = "blue")
+
+   vline(obj$report()$mu_imm[1:6,i], lty = "dashed", col = "red")
    
    # Mature recruitment:
    ix <- data$year_rec == years[i] - min(years)
    lines(data$x_rec[ix], data$f_rec[ix], lwd = 2, col = "lightblue")
    lines(data$x_rec[ix], obj$report()$eta_rec[ix], lwd = 2, col = "blue")
+   
+   vline(obj$report()$mu_mat[6:7,i,1], lty = "dashed", col = "blue")
    
    # Year label:
    text(par("usr")[1] + 0.15 * diff(par("usr")[1:2]),
