@@ -37,8 +37,8 @@ parameters <- list(mu0                 = 10,                             # First
                    log_hiatt_slope     = log(c(0.350, 0.055)),           # Hiatt slope parameters.
                    log_hiatt_intercept = log(c(0.689, 10.000)),          # Hiatt intercept parameters.
                    log_growth_error    = log(c(0.01, 0.25)),             # Growth increment error inflation parameters.
-                   log_mu_year         = rep(0, n_instar * n_year),      # Log-scale instar mean year interaction (n_instar x n_year).
-                   log_sigma_mu_year   = log(c(1,1,1,1,1.5,2,3)),        # Instar mean year interaction error term.
+                   mu_year_instar      = rep(0, n_instar * n_year),      # Log-scale instar mean year interaction (n_instar x n_year).
+                   log_sigma_mu_year_instar   = log(c(1,1,1,1,1.5,2,3)),        # Instar mean year interaction error term.
                    delta_mat = 0, 
                    log_n_imm_year_0    = rep(4, n_instar-1),             # First year immature instar abundances (n_instar-1).
                    log_n_imm_instar_0  = rep(4, n_year),                 # First instar recruitment for all years (n_year).
@@ -57,7 +57,7 @@ parameters <- list(mu0                 = 10,                             # First
                    logit_M_mat = c(-1.10, -1.73))                        # Logit-scale mature mortality.  
 
 # Define random variables in model:
-random <- c("log_mu_year", "log_n_imm_instar_0", "logit_p_mat_year", "log_year_effect")
+random <- c("mu_year_instar", "log_n_imm_instar_0", "logit_p_mat_year", "log_year_effect")
 data.vars <- names(data)[-grep("(rec)|(res)|(skp)", names(data))]
    
 # Initialize parameter mapping:
@@ -90,14 +90,14 @@ obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = rand
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
-# Add some growth parameters:
-map <- update.map(map, free = c("log_hiatt_slope", "log_hiatt_intercept", "log_sigma0"))
+# Add annual growth parameters:
+map <- update.map(map, free = c("mu_year_instar")) 
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
-# Add annual growth parameters:
-map <- update.map(map, free = c("log_mu_year")) 
+# Add some growth parameters:
+map <- update.map(map, free = c("log_hiatt_slope", "log_hiatt_intercept", "log_sigma0"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
@@ -115,9 +115,11 @@ obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
 # Add annual growth parameters:
-map <- update.map(map, free = "log_sigma_mu_year") 
+map <- update.map(map, free = "log_sigma_mu_year_instar") 
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
-obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
+obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
+parameters$mu_year_instar[abs(parameters$mu_year_instar) > 5] <- 0
+parameters$log_sigma_mu_year_instar[1] <- 1
 

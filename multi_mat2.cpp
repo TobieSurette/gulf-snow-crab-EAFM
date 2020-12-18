@@ -15,8 +15,8 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(log_hiatt_slope);        // Hiatt slope parameters.
    PARAMETER_VECTOR(log_hiatt_intercept);    // Hiatt intercept parameters.
    PARAMETER_VECTOR(log_growth_error);       // Growth increment error inflation parameters.
-   PARAMETER_VECTOR(log_mu_year);            // Log-scale instar mean year interaction (n_instar x n_year).
-   PARAMETER_VECTOR(log_sigma_mu_year);      // Instar mean year interaction error term (n_instar).
+   PARAMETER_VECTOR(mu_year_instar);         // Log-scale instar mean year interaction (n_instar x n_year).
+   PARAMETER_VECTOR(log_sigma_mu_year_instar); // Instar mean year interaction error term (n_instar).
    PARAMETER(delta_mat);                     // Maturity growth scaling factor.
    
    // Abundance parameters:
@@ -46,10 +46,10 @@ template<class Type> Type objective_function<Type>::operator()(){
    Type v = 0;
    
    // Vector sizes:      
-   int ni = x_imm.size();                        // Number of immature observations.
-   int nm = x_mat.size();                        // Number of mature observations.
-   int n_instar = log_n_imm_year_0.size() + 1;   // Number instars.
-   int n_year   = log_mu_year.size() / n_instar; // Number of years.
+   int ni = x_imm.size();                           // Number of immature observations.
+   int nm = x_mat.size();                           // Number of mature observations.
+   int n_instar = log_n_imm_year_0.size() + 1;      // Number instars.
+   int n_year   = mu_year_instar.size() / n_instar; // Number of years.
    
    // Instar global mean and error:
    vector<Type> mu(n_instar);
@@ -69,13 +69,13 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Annual instar sizes for immatures:
    for (int k = 0; k < n_instar; k++){
       for (int y = 0; y < n_year; y++){
-         v -= dnorm(log_mu_year[y * n_instar + k], Type(0), exp(log_sigma_mu_year[k]), true);
+         v -= dnorm(mu_year_instar[y * n_instar + k], Type(0), exp(log_sigma_mu_year_instar[k]), true);
       }
    }
    matrix<Type> mu_imm(n_instar,n_year);
    for (int k = 0; k < n_instar; k++){
       for (int y = 0; y < n_year; y++){
-         mu_imm(k,y) = exp(log(mu[k]) + log_mu_year[y * n_instar + k]);
+         mu_imm(k,y) = mu[k] + mu_year_instar[y * n_instar + k];
       }
    }   
    
