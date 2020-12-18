@@ -38,8 +38,8 @@ parameters <- list(mu0                 = 10,                             # First
                    log_hiatt_intercept = log(c(0.689, 10.000)),          # Hiatt intercept parameters.
                    log_growth_error    = log(c(0.01, 0.25)),             # Growth increment error inflation parameters.
                    mu_year_instar      = rep(0, n_instar * n_year),      # Log-scale instar mean year interaction (n_instar x n_year).
-                   log_sigma_mu_year_instar   = log(c(1,1,1,1,1.5,2,3)),        # Instar mean year interaction error term.
-                   delta_mat = 0,
+                   log_sigma_mu_year_instar   = log(c(0.25,0.35,0.5,0.75,1.25,1.5,2)),  # Instar mean year interaction error term.
+                   delta_mat = -1.5,
                    log_n_imm_year_0    = rep(4, n_instar-1),             # First year immature instar abundances (n_instar-1).
                    log_n_imm_instar_0  = rep(4, n_year),                 # First instar recruitment for all years (n_year).
                    log_sigma_n_imm_instar_0 = -1,                        # Log-scale first instar annual recruitment error parameter.
@@ -90,18 +90,23 @@ map <- update.map(map, free = c("log_sigma_year_effect"))
 parameters$log_year_effect[length(parameters$log_year_effect)] <- 0
 map$log_year_effect <- factor(c(1:(length(parameters$log_year_effect)-1 ), NA))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
-obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
-parameters <- update.parameters(parameters, obj, map = map)
-
-# Add delta_mat:
-map <- update.map(map, free = c("delta_mat"))
-obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
 # Add mortality parameters:
 map <- update.map(map, free = c("logit_M_mat","logit_M_imm"))
-#map$logit_M_mat <- factor(rep(1, 2))
+obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
+obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
+parameters <- update.parameters(parameters, obj, map = map)
+
+# Add selectivity parameters:
+map <- update.map(map, free = c("selectivity_x50", "log_selectivity_slope"))
+obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
+obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
+parameters <- update.parameters(parameters, obj, map = map)
+
+# Add delta_mat:
+map <- update.map(map, free = c("delta_mat"))
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
@@ -124,25 +129,19 @@ obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = rand
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 200))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
-# Add selectivity parameters:
-map <- update.map(map, free = c("selectivity_x50", "log_selectivity_slope"))
-obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
-obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
-parameters <- update.parameters(parameters, obj, map = map)
-
 # Add annual growth parameters:
 map <- update.map(map, free = "log_sigma_mu_year_instar")
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
-<<<<<<< HEAD
 # Add annual growth parameters:
 map <- update.map(map, free = "mu0") 
 obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 2000))$par
 parameters <- update.parameters(parameters, obj, map = map)
-=======
+
+
 parameters$mu_year_instar[abs(parameters$mu_year_instar) > 5] <- 0
 parameters$log_sigma_mu_year_instar[1] <- 1
->>>>>>> fe4cb5d7ec0e004204ad760eaf0669a4a91f2363
+
