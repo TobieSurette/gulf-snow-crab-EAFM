@@ -213,12 +213,13 @@ plot(years, obj$report()$mu_imm[7, ])
 # Immature growth anomalies:
 delta <- obj$report()$mu_imm - repvec(obj$report()$mu, ncol = n_year)
 image(years, 4:(n_instar+3), t(delta), col = colorRampPalette(c("red", "white", "blue"))(100), 
-      zlim = c(-5, 5), xlab = "", ylab = "")
+      zlim = c(-10, 10), xlab = "", ylab = "")
 mtext("Years", 1, 2.5, cex = 1.25)
 mtext("Instars", 2, 2.5, cex = 1.25)
    
 # Mature growth anomalies:
-delta <- obj$report()$mu_mat - repvec(obj$report()$mu, ncol = n_year)image(years, 4:(n_instar+3), t(delta), col = colorRampPalette(c("red", "white", "blue"))(100), 
+delta <- obj$report()$mu_mat - repvec(obj$report()$mu, ncol = n_year)
+image(years, 4:(n_instar+3), t(delta), col = colorRampPalette(c("red", "white", "blue"))(100), 
       zlim = c(-5, 5), xlab = "", ylab = "")
 mtext("Years", 1, 2.5, cex = 1.25)
 mtext("Instars", 2, 2.5, cex = 1.25)

@@ -136,4 +136,8 @@ obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = rand
 obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 300))$par
 parameters <- update.parameters(parameters, obj, map = map)
 
-
+# Add annual growth parameters:
+map <- update.map(map, free = "mu0") 
+obj <- MakeADFun(data[data.vars], parameters, DLL = "multi_mat2",  random = random, map = map)
+obj$par <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 2000))$par
+parameters <- update.parameters(parameters, obj, map = map)
