@@ -10,11 +10,11 @@ template<class Type> Type objective_function<Type>::operator()(){
    PARAMETER_VECTOR(log_increment);       // Vector of log-scale growth increments.
    PARAMETER(log_mu_increment);           // Log-scale mean parameter associated with instar growth increments.
    PARAMETER(log_sigma_increment);        // Log-scale error parameter associated with instar growth increments.
-   PARAMETER_VECTOR(mu_instar_year);
+   PARAMETER_VECTOR(mu_instar_year);      // Annual deviations from instar means.
    PARAMETER(log_sigma_mu_instar_year);  
    
    // Instar errors:
-   PARAMETER_VECTOR(beta_log_sigma_instar);   // Exponential intercept and slope parameters for log-scale instar errors.
+   PARAMETER_VECTOR(beta_log_sigma_instar);    // Exponential intercept and slope parameters for log-scale instar errors.
    PARAMETER(log_sigma_log_sigma_instar_year); // Log-scale instar x year error meta-parameter. 
    PARAMETER_VECTOR(log_sigma_instar_year);    // Log-scale instar x year error parameters.
 

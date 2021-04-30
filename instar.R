@@ -43,7 +43,7 @@ map$log_lambda_alpha  <- factor(1)
 map$log_lambda_instar <- factor(1:length(parameters$log_lambda_instar))
 map$logit_scale       <- factor(1:length(parameters$logit_scale))
 map$log_sigma_lambda_instar <- factor(1)
-obj <- MakeADFun(data, parameters, DLL = "instar_count", map = map, random = "log_lambda_instar") 
+obj <- MakeADFun(data, parameters, DLL = "instar", map = map, random = "log_lambda_instar") 
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 parameters$log_lambda_alpha <- theta[["log_lambda_alpha"]]
@@ -54,7 +54,7 @@ parameters$logit_scale <- obj$report()$logit_scale
 # Add error parameters:
 map$log_sigma0 = factor(1)
 map$log_growth_error = factor(c(1, 2))
-obj <- MakeADFun(data, parameters, DLL = "instar_count", map = map, random = "log_lambda_instar") 
+obj <- MakeADFun(data, parameters, DLL = "instar", map = map, random = "log_lambda_instar") 
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 obj$par <- theta
 parameters$log_lambda_alpha <- theta[["log_lambda_alpha"]]

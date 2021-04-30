@@ -22,7 +22,7 @@ plot.instar <- function(obj, data, xlim = c(10, 140)){
 plot.instar.year <- function(obj, data, xlim = c(2.0, 5), ylim = c(0, 200)){
    clg()
    dev.new(width = 8.5, height = 11)
-   m <- kronecker(matrix(1:24, ncol = 3), matrix(1, ncol = 3, nrow = 3))
+   m <- kronecker(matrix(1:33, ncol = 3), matrix(1, ncol = 3, nrow = 3))
    m <- rbind(0, cbind(0, 0, m, 0), 0, 0)
    layout(m)
    par(mar = c(0,0,0,0))
@@ -59,3 +59,5 @@ plot.instar.year <- function(obj, data, xlim = c(2.0, 5), ylim = c(0, 200)){
       box()
    }
 }
+
+

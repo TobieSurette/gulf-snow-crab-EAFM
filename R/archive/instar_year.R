@@ -2,12 +2,15 @@ library(TMB)
 library(gulf.data)
 library(gulf.graphics)
 
-category <- "MI"
-years  <- 1998:2020
+category <- "FI"
+years  <- 1988:2020
 mu_instars <- c(10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
 names(mu_instars) <- 4:11
 roman <- c("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV")
    
+
+setwd("programs/archive")
+
 # Work computer fix:
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:/Rtools/mingw_64/bin/")
 
@@ -18,15 +21,25 @@ dyn.load(dynlib("instar_year"))
 b <- read.scsbio(years, survey = "regular")
 b <- b[which(is.category(b, category)), ]
 b <- b[which(b$carapace.width > 6), ]
-if (b$sex[1] == "2"){
+if (substr(category,1,1) == "F"){
    b <- b[which(b$carapace.width <= 90), ] 
    mu_instars <- mu_instars[as.character(4:9)]
 }else{
    b <- b[which(b$carapace.width <= 140), ]
 } 
 b$year <- year(b)
+b$tow.id <- tow.id(b)
 
 # Set up data:
+f <- freq(round(100*log(b$carapace.width)), by = b["year"])[, -1]
+names(f) <- as.character(as.numeric(names(f)) / 100)
+f <- as.matrix(f)
+rownames(f) <- years
+data <- list(x = as.numeric(repvec(as.numeric(colnames(f)), nrow = length(years))),
+             f = as.numeric(f),
+             year = as.numeric(repvec(as.numeric(rownames(f)), ncol = ncol(f))) - min(b$year))
+
+# Overwrite:
 r <- aggregate(list(f = b$year), list(x = round(log(b$carapace.width), 2), year = b$year), length)
 data <- list(x = r$x, f = r$f, year = r$year - min(r$year))
    
@@ -62,7 +75,7 @@ theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.year(obj, data)
+plot.instar.year(obj, data, xlim = c(2.5, 4.25))
 
 # Estimate parameters: 
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
@@ -77,7 +90,7 @@ theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.year(obj, data)
+plot.instar.year(obj, data, xlim = c(2.5, 4.25))
 
 # Estimate parameters: 
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
@@ -88,7 +101,7 @@ theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 500))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.year(obj, data)
+plot.instar.year(obj, data, xlim = c(2.5, 4.25))
 
 
 obj <- MakeADFun(data, parameters, DLL = "instar_year", 
@@ -98,7 +111,7 @@ obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
 
-plot.instar.year(obj, data)
+plot.instar.year(obj, data, xlim = c(2.5, 4.25))
 
 mu_instar_year <- obj$report()$mu_instar_year
 dim(mu_instar_year) <- c(length(years), length(mu_instars))

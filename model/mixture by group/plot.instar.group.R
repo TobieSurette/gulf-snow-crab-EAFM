@@ -1,0 +1,43 @@
+plot.instar.group <- function(obj, data, groups, labels, xlim = c(2.0, 5), ylim = c(0, 200)){
+   clg()
+   dev.new(width = 8.5, height = 11)
+   m <- kronecker(matrix(1:10, ncol = 2), matrix(1, ncol = 5, nrow = 5))
+   m <- rbind(0, cbind(0, 0, m, 0), 0, 0)
+   layout(m)
+   par(mar = c(0,0,0,0))
+   m <- s <- p <- NULL
+   
+   if (missing(labels)) labels <- groups
+   
+   for (i in 1:length(unique(data$group))){   
+      # Plot output:
+      gbarplot(data$f[data$group == i-1], data$x[data$group == i-1], 
+               border = "grey50", width = 0.01, xlim = xlim, 
+               xaxs = "i", xaxt = "n", yaxt = "n", ylim = ylim, lwd = 0.5)
+      grid()
+      x0 <- seq(0, 5, len = 1000)
+      d <- rep(0, length(x0))
+      for (j in 1:length(obj$report()$mu_instar)){
+         lines(x0, 0.01 * obj$report()$p[j,i] * sum(data$f[data$group == i-1]) * dnorm(x0, obj$report()$mu[j,i], obj$report()$sigma[j,i]), lwd = 0.5, lty = "dashed", col = "blue")
+         d <- d + .01 * obj$report()$p[j,i] * sum(data$f[data$group == i-1]) * dnorm(x0, obj$report()$mu[j,i], obj$report()$sigma[j,i]) 
+      }
+      lines(x0, d, col = "blue", lwd = 0.5)
+   
+      vline(obj$report()$mu[,i], 
+            col = "blue", 
+            lwd = 0.5)
+      
+      if ((i %% 10) <=  5) axis(2)
+      if ((i %% 10) ==  5) axis(1, at = seq(2, xlim[2]-0.5, by = 0.5))
+      if ((i %% 10) ==  0) axis(1, at = seq(2.5, xlim[2], by = 0.5))
+      if ((i %% 10) ==  0) mtext("log(cw)", 1, 2.5, at = 2.5)
+      if ((i %% 10) == 3) mtext("Frequency", 2, 2.5, cex = 1.25, at = 0)
+      #if (i == 16) mtext("ln(cw)", 1, 2.5, cex = 1.25)
+      
+      # Group label:
+      text(par("usr")[1] + 0.1 * diff(par("usr")[1:2]), 
+           par("usr")[3] + 0.85 * diff(par("usr")[3:4]), labels[i], cex = 1.25)
+      
+      box()
+   }
+}
