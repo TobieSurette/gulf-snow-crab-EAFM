@@ -5,3 +5,5 @@
 *.dll
 *.o
 *.so
+.DS_Store
+model/.DS_Store
