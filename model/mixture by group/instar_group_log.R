@@ -24,31 +24,62 @@ b <- read.scsbio(years, survey = "regular")
 b <- b[which(b$sex == sex), ]
 b <- b[which(b$carapace.width > 6), ]
 if (length(maturity) > 0){
-   if (maturity == 0) b <- b[which(!is.mature(b) | (b$carapace.width <= 40)), ] 
+   if (maturity == 0) b <- b[which(!is.mature(b)), ] 
    if (maturity == 1) b <- b[which(is.mature(b)), ] 
 }
 if (sex == 2){
    b <- b[which(b$carapace.width <= 90), ] 
-   mu_instars <- mu_instars[as.character(4:10)]
+   if (maturity == 0) mu_instars <- mu_instars[as.character(4:10)]
+   if (maturity == 1) mu_instars <- mu_instars[as.character(9:11)]
 }else{
    b <- b[which(b$carapace.width <= 140), ]
 } 
 b$year <- year(b)
 b$tow.id <- tow.id(b)
 
+tows <- unique(b[c("date", "tow.id")])
+b$tow <- match(b[c("date", "tow.id")], tows)-1
+#ix <- which(is.mature(b) & !is.new.shell(b))
+#b <- b[-ix, ]
+
+#t <- table(b$tow)
+#ix <- order(t)
+#ix <- names(t)[rev(ix)[1:500]]
+#b <- b[b$tow %in% as.numeric(ix), ]
+
+if (maturity == 0) xlim = c(2.5, 4.25)
+if (maturity == 1) xlim = c(3.5, 4.5)
+b$tow <- match(b$tow, sort(unique(b$tow))) - 1
+
+mu_instars <- c(10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
+names(mu_instars) <- 4:11
+mu_instars <- mu_instars[as.character(4:9)]
+
 # Set up data:
-r <- aggregate(list(f = b$year), list(x = round(log(b$carapace.width), 2), year = b$year), length)
+#r <- aggregate(list(f = b$year), list(x = round(log(b$carapace.width), 2), year = b$year), length)
+r <- aggregate(list(f = b$year), 
+               by = list(date = b$date,
+                         tow.number = b$tow.number,
+                         group = b$tow, 
+                         year = b$year, 
+                         x = round(log(b$carapace.width), 2)), 
+               length)
 data <- list(x = r$x, 
-             f = r$f, 
-             group = r$year - min(r$year))
+             f = r$f)
+data$group <- r$group
+data$year <- r$year
 data$n_instar <- length(mu_instars)
 data$n_group  <- max(data$group) + 1
 data$precision <- rep(1, length(data$x))
 data$precision[r$year >= 1998] <- 0.1
+data$precision[r$year >= 1998] <- 0.1
+data$tow.number <- r$tow.number
+data$date <- r$date
 
 # Define initial parameters:
 parameters <- list(mu_instar_0 = as.numeric(log(mu_instars[1])),   # Mean size of the first instar.
-                   log_increment = -1.165,                      # Log-scale mean parameter associated with instar growth increments.
+                   log_increment = log(0.36),                         # Log-scale mean parameter associated with instar growth increments.
+                   log_increment_delta = log(0.013),
                    log_sigma_mu_instar_group = -4,                 # Log-scale error for instar-group means random effect.
                    mu_instar_group = rep(0, length(mu_instars) * length(unique(data$group))),  # Instar-group means random effect.
                    log_sigma = -2,                                 # Log-scale instar standard error.
@@ -70,64 +101,72 @@ map <- lapply(parameters, function(x) as.factor(rep(NA, length(x))))
 map$mu_logit_p <- factor(1)
 map$log_sigma_logit_p_instar_group <- factor(1)
 map$logit_p_instar_group <- factor(1:length(parameters$logit_p_instar_group))
-obj <- MakeADFun(data, parameters, random = random, map = map, DLL = "instar_group_log")
+obj <- MakeADFun(data[data.cpp("instar_group_log.cpp")], parameters, random = random, map = map, DLL = "instar_group_log")
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-
-# Fit mixture global means:
-map$mu_instar_0 <- factor(1)
-map$log_increment <- factor(1)
-obj <- MakeADFun(data, parameters, random = random, map = map, DLL = "instar_group_log")
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
-obj$par <- theta
-rep <- sdreport(obj)
-parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.group(obj, data, xlim = c(2.5, 4.25), groups = years)
 
 # Fit mixture global standard errors:
 map$log_sigma <- factor(1)
-obj <- MakeADFun(data, parameters, random = random, map = map, DLL = "instar_group_log")
+obj <- MakeADFun(data[data.cpp("instar_group_log.cpp")], parameters, random = random, map = map, DLL = "instar_group_log")
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.group(obj, data, xlim = c(2.5, 4.25), groups = years)
 
-# Fit mixture instar means:
+t <- table(data$group)
+groups <- as.numeric(names(t[rev(order(t))]))[1:10]
+plot.instar.group(obj, data, xlim = xlim, ylim = c(0, 20), groups = groups)
+
+# Fit mixture global means:
+map$log_increment <- factor(1)
+map$log_increment_delta <- factor(1)
+obj <- MakeADFun(data[data.cpp("instar_group_log.cpp")], parameters, random = random, map = map, DLL = "instar_group_log")
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+obj$par <- theta
+rep <- sdreport(obj)
+parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
+
+# Initial instar means:
+map$mu_instar_0 <- factor(1)
+obj <- MakeADFun(data[data.cpp("instar_group_log.cpp")], parameters, random = random, map = map, DLL = "instar_group_log")
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+obj$par <- theta
+rep <- sdreport(obj)
+parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
+
+# Fit mixture instar mean group random effect:
 map$mu_instar_group <- factor(1:length(parameters$mu_instar_group))
-obj <- MakeADFun(data, parameters, random = random, map = map, DLL = "instar_group_log")
+obj <- MakeADFun(data[data.cpp("instar_group_log.cpp")], parameters, random = random, map = map, DLL = "instar_group_log")
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.group(obj, data, xlim = c(2.5, 4.25), groups = years)
 
+# Fit mixture instar mean group random effect error parameter:
 map$log_sigma_mu_instar_group <- factor(1)
-obj <- MakeADFun(data, parameters, random = random, map = map, DLL = "instar_group_log")
+obj <- MakeADFun(data[data.cpp("instar_group_log.cpp")], parameters, random = random, map = map, DLL = "instar_group_log")
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.group(obj, data, xlim = c(2.5, 4.25), groups = years)
 
 # Fit mixture instar standard errors:
 map$log_sigma_instar_group <- factor(1:length(parameters$log_sigma_instar_group))
-obj <- MakeADFun(data, parameters, random = random, map = map, DLL = "instar_group_log")
+obj <- MakeADFun(data[data.cpp("instar_group_log.cpp")], parameters, random = random, map = map, DLL = "instar_group_log")
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.group(obj, data, xlim = c(2.5, 4.25), groups = years)
 
 # Fit complete model:
-obj <- MakeADFun(data, parameters, random = random, DLL = "instar_group_log")
+obj <- MakeADFun(data[data.cpp("instar_group_log.cpp")], parameters, random = random, DLL = "instar_group_log")
 theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 5000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-plot.instar.group(obj, data, xlim = c(2.5, 4.25), groups = years)
+plot.instar.group(obj, data, xlim = xlim, groups = years)
 
 
 mu_instar_group <- obj$report()$mu_instar_group
@@ -175,7 +214,7 @@ dimnames(sigma) <- list(names(mu_instars), years)
 
 # Calculate deltas for means 
 clg()
-plot(range(years), c(10, 65), type = "n", xlab = "Years", ylab = "Carapace width (mm)")
+plot(range(years), c(10, 75), type = "n", xlab = "Years", ylab = "Carapace width (mm)")
 cols <- rainbow(nrow(mu))
 grid()
 for (i in 1:nrow(mu)){

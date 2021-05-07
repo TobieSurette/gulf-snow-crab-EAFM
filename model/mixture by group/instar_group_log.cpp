@@ -11,6 +11,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    // Instar mean parameters:
    PARAMETER(mu_instar_0);                 // Mean size of the first instar.
    PARAMETER(log_increment);               // Vector of log-scale growth increments.
+   PARAMETER(log_increment_delta);         // Vector of log-scale growth increments modifiers.
    PARAMETER_VECTOR(mu_instar_group);      // Instar-group means random effect.
    PARAMETER(log_sigma_mu_instar_group);   // Log-scale error for instar-group means random effect.
    
@@ -34,7 +35,7 @@ template<class Type> Type objective_function<Type>::operator()(){
    vector<Type> mu_instar(n_instar);
    mu_instar[0] = mu_instar_0;
    for (int j = 1; j < n_instar; j++){
-      mu_instar[j] = mu_instar[j-1] + exp(log_increment); // Instar means.
+      mu_instar[j] = mu_instar[j-1] + exp(log_increment) - j * exp(log_increment_delta); // Instar means.
    }
   
    // Group instar mean sizes:
