@@ -58,7 +58,7 @@ for (j in 1:length(years)){
    }
 }
    
-# Plot instar densitiess:
+# Plot instar densities:
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
@@ -114,8 +114,7 @@ for (i in 1:nrow(mu)){
 axis(1, at = seq(3, 33, by = 5), labels = years[seq(3, 33, by = 5)])
 mtext("Year", 1, 2.75, cex = 1.5)
 
-
-
+# Pairwise plots:
 clg()
 dev.new(width = 8.5, height = 11)
 m <- kronecker(matrix(1:36, ncol = 6), matrix(1, ncol = 5, nrow = 5))
