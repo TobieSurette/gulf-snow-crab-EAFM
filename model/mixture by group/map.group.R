@@ -58,10 +58,16 @@ for (j in 1:length(years)){
    }
 }
    
-# Plot instar densities:
+# Plot instar size anomalies grouped by year:
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
+   file <- paste0("figures/Female immature instar size anomaly maps ", years[j], ".pdf")
+   pdf(file = file, width = 8.5, height = 11)
+   m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
+   m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
+   layout(m)
+   par(mar = c(0,0,0,0))
    for (i in 1:length(instars)){
       scale <- 0.02
       limit <- 20000
@@ -72,33 +78,87 @@ for (j in 1:length(years)){
       ix <- !is.na(as.character(s$tow))
       s$value <- NA
       s$value[ix] <- d[as.character(instars[i]), as.character(s$tow[ix])]
-
-      file <- paste0("maps/instar density/Female immature ", years[j], " - instar ", as.roman(instars[i]), " density.pdf")
-      pdf(file = file, width = 8.5, height = 8.5)
+      
       map.new()
       #map("bathymetry")
       map("coast")
       ix <- s$value > 0
-      points(lon(s)[ix], lat(s)[ix], pch = 21, cex = scale * sqrt(s$value[ix]), bg = "red3")
+      points(lon(s)[ix], lat(s)[ix], pch = 21, cex = scale * sqrt(s$value[ix]), bg = "brown1")
       ix <- which(is.na(s$value)) 
-      points(lon(s)[ix], lat(s)[ix], pch = "x", lwd = 2)
+      points(lon(s)[ix], lat(s)[ix], pch = "x", cex = 0.8, lwd = 2)
       box()
-      map.axis(1:2)
-      v <- round(seq(0, limit, len = 4),1)
+      v <- round(seq(0, limit, len = 5),1)
       cex = scale * sqrt(abs(v))
       cex[cex == 0] <- 1
-      legend("bottomleft", 
+      if (i == 6){
+         legend("bottomleft", 
              legend = paste0(round(rev(v)), " #/km2"),
-             pch = c(4, 21, 21, 21),
-             pt.bg = c("black", "red3", "red3", "red3"),
-             pt.cex = cex, bg = "white")
-     # mtext(paste0(unique(data$year), " survey, instar ", as.roman(i), ", mean size = ", round(exp(r$mu_instar)[i-3], 1), " mm"),
-   #         3, 0.5, cex = 1.5)
-      dev.off()
+             pch = rev(c(4, 21, 21, 21, 21)),
+             cex = 0.8,
+             pt.bg = rev(c("black", rep("brown1", 4))),
+             pt.cex = rev(cex), bg = "white")
+      }
+      if (i %in% 1:3) map.axis(2)
+      if (i %in% c(3,6)) map.axis(1)
+      
+      text(par("usr")[1] + 0.85 * diff(par("usr")[1:2]),
+           par("usr")[3] + 0.85 * diff(par("usr")[3:4]),
+           as.roman(instars[i]), cex = 1.5)
    }
+   dev.off()
 }
 
-# Annual log-scale size differencesL
+# Plot instar densities grouped by year:
+years <- sort(unique(data$year))
+instars <- 4:9
+for (j in 1:length(years)){
+   file <- paste0("figures/Female immature instar density maps ", years[j], ".pdf")
+   pdf(file = file, width = 8.5, height = 11)
+   m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
+   m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
+   layout(m)
+   par(mar = c(0,0,0,0))
+   for (i in 1:length(instars)){
+      scale <- 0.02
+      limit <- 20000
+      s <- read.scsset(years[j], valid = 1, survey = "regular")   
+      
+      # Instars:
+      s$tow <- tows$tow[match(s[vars], tows[vars])] 
+      ix <- !is.na(as.character(s$tow))
+      s$value <- NA
+      s$value[ix] <- d[as.character(instars[i]), as.character(s$tow[ix])]
+      
+      map.new()
+      #map("bathymetry")
+      map("coast")
+      ix <- s$value > 0
+      points(lon(s)[ix], lat(s)[ix], pch = 21, cex = scale * sqrt(s$value[ix]), bg = "brown1")
+      ix <- which(is.na(s$value)) 
+      points(lon(s)[ix], lat(s)[ix], pch = "x", cex = 0.8, lwd = 2)
+      box()
+      v <- round(seq(0, limit, len = 5),1)
+      cex = scale * sqrt(abs(v))
+      cex[cex == 0] <- 1
+      if (i == 6){
+         legend("bottomleft", 
+             legend = paste0(round(rev(v)), " #/km2"),
+             pch = rev(c(4, 21, 21, 21, 21)),
+             cex = 0.8,
+             pt.bg = rev(c("black", rep("brown1", 4))),
+             pt.cex = rev(cex), bg = "white")
+      }
+      if (i %in% 1:3) map.axis(2)
+      if (i %in% c(3,6)) map.axis(1)
+      
+      text(par("usr")[1] + 0.85 * diff(par("usr")[1:2]),
+           par("usr")[3] + 0.85 * diff(par("usr")[3:4]),
+           as.roman(instars[i]), cex = 1.5)
+   }
+   dev.off()
+}
+
+# Annual log-scale size differences:
 clg()
 dev.new(width = 8.5, height = 11)
 m <- kronecker(matrix(1:6, ncol = 1), matrix(1, ncol = 5, nrow = 5))
