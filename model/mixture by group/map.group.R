@@ -15,15 +15,24 @@ dimnames(sigma) <- list(instar = names(mu_instars), tow = 0:(ncol(mu)-1))
 # Calculate instar counts:
 n <- p * repvec(tows$n, nrow = data$n_instar)
 d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
-#c(10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
+#c(3.19, 5.12 7.65, 10.97, 15.32, 21.02, 28.48, 38.25, 50.73, 64.53, 79.79, 96.67, 115.34, 135.99)
+#10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
 
-# Plot instar size anomalies:
+
+
+# Plot instar size anomalies grouped by year:
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
+   file <- paste0("figures/Female immature instar size anomaly maps ", years[j], ".pdf")
+   pdf(file = file, width = 8.5, height = 11)
+   m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
+   m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
+   layout(m)
+   par(mar = c(0,0,0,0))
    for (i in 1:length(instars)){
       scale <- 1.5 * sqrt((50 / mu_instars[as.character(instars[i])]))
-      limit <- 2.5 #round(3 * (50 / mu_instars[as.character(instars[i])]), 1)
+      limit <- 2.5
       s <- read.scsset(years[j], valid = 1, survey = "regular")   
       
       # Instars:
@@ -31,9 +40,7 @@ for (j in 1:length(years)){
       ix <- !is.na(as.character(s$tow))
       s$value <- NA
       s$value[ix] <- exp(mu[as.character(instars[i]), as.character(s$tow[ix])]) - exp(r$mu_instar)[instars[i]-3]
-
-      file <- paste0("maps/instar size/Female immature ", years[j], " - instar ", as.roman(instars[i]), " size anomaly.pdf")
-      pdf(file = file, width = 8.5, height = 8.5)
+      
       map.new()
       #map("bathymetry")
       map("coast")
@@ -47,56 +54,12 @@ for (j in 1:length(years)){
       v <- round(seq(-limit, limit, len = 7),1)
       cex = scale * sqrt(abs(v))
       cex[cex == 0] <- 1
-      legend("bottomleft", 
+      if (i == 6){
+         legend("bottomleft", 
              legend = paste0(rev(v), " mm"),
              pch = c(21,21,21, 4, 21, 21, 21),
              pt.bg = c("blue", "blue", "blue", "black", "red", "red", "red"),
              pt.cex = cex, bg = "white")
-     # mtext(paste0(unique(data$year), " survey, instar ", as.roman(i), ", mean size = ", round(exp(r$mu_instar)[i-3], 1), " mm"),
-   #         3, 0.5, cex = 1.5)
-      dev.off()
-   }
-}
-   
-# Plot instar size anomalies grouped by year:
-years <- sort(unique(data$year))
-instars <- 4:9
-for (j in 1:length(years)){
-   file <- paste0("figures/Female immature instar size anomaly maps ", years[j], ".pdf")
-   pdf(file = file, width = 8.5, height = 11)
-   m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
-   m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
-   layout(m)
-   par(mar = c(0,0,0,0))
-   for (i in 1:length(instars)){
-      scale <- 0.02
-      limit <- 20000
-      s <- read.scsset(years[j], valid = 1, survey = "regular")   
-      
-      # Instars:
-      s$tow <- tows$tow[match(s[vars], tows[vars])] 
-      ix <- !is.na(as.character(s$tow))
-      s$value <- NA
-      s$value[ix] <- d[as.character(instars[i]), as.character(s$tow[ix])]
-      
-      map.new()
-      #map("bathymetry")
-      map("coast")
-      ix <- s$value > 0
-      points(lon(s)[ix], lat(s)[ix], pch = 21, cex = scale * sqrt(s$value[ix]), bg = "brown1")
-      ix <- which(is.na(s$value)) 
-      points(lon(s)[ix], lat(s)[ix], pch = "x", cex = 0.8, lwd = 2)
-      box()
-      v <- round(seq(0, limit, len = 5),1)
-      cex = scale * sqrt(abs(v))
-      cex[cex == 0] <- 1
-      if (i == 6){
-         legend("bottomleft", 
-             legend = paste0(round(rev(v)), " #/km2"),
-             pch = rev(c(4, 21, 21, 21, 21)),
-             cex = 0.8,
-             pt.bg = rev(c("black", rep("brown1", 4))),
-             pt.cex = rev(cex), bg = "white")
       }
       if (i %in% 1:3) map.axis(2)
       if (i %in% c(3,6)) map.axis(1)
