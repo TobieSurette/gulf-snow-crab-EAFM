@@ -1,6 +1,6 @@
 ylim = c(0, 30)
 
-groups <- tows$tow[rev(order(tows$n))][1:1000]
+groups <- tows$tow[rev(order(tows$n))]
 
 r <- obj$report()
 mu <- r$mu
@@ -11,7 +11,7 @@ sigma <- r$sigma
 dimnames(sigma) <- list(instar = names(mu_instars), tow = tows$tow)
 
 clg()
-file <- paste0("figures/Female immature histograms.pdf")
+file <- paste0("figures/Female immature histograms BSM.pdf")
 pdf(file = file, width = 8.5, height = 8.5)
 m <- kronecker(matrix(1:10, ncol = 2), matrix(1, ncol = 5, nrow = 5))
 m <- rbind(0, cbind(0, 0, m, 0), 0, 0)
@@ -31,7 +31,7 @@ for (i in 1:length(groups)){
       z <- z + rep(tmp$precision[ix], tmp$f[ix]) * (runif(length(z))-0.5)
       tab <- table(round(log(z), 2))
       gbarplot(tab, 
-               border = "grey50", width = 0.1, xlim = xlim, 
+               border = "grey50", width = 0.1, xlim = c(1, 4.25), 
                xaxs = "i", xaxt = "n", yaxt = "n", ylim = ylim, lwd = 0.5)
       grid()
       x0 <- seq(0, 5, by = 0.01)
