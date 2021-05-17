@@ -49,8 +49,13 @@ tows  <- aggregate(list(n = b$carapace.width),  b[c("date", "tow.number")], leng
 tows  <- sort(tows, by = c("date", "tow.number"))
 b$tow <- match(b[c("date", "tow.number")], tows[c("date", "tow.number")]) - 1
 tows  <- aggregate(list(n = b$carapace.width),  b[c("date", "tow", "tow.number")], length)
+tows$n_imm <- aggregate(list(x = !b$maturity),  b[c("date", "tow.number")], sum, na.rm = TRUE)$x
+tows$n_mat <- aggregate(list(x = b$maturity),  b[c("date", "tow.number")], sum, na.rm = TRUE)$x
 tows  <- sort(tows, by = c("date", "tow.number"))
-
+s <- read.scsset(year = years, valid = 1, survey = "regular")
+ix <- match(tows[c("date", "tow.number")], s[c("date", "tow.number")])
+tows$swept.area <- s$swept.area[ix]
+   
 # Set up data:
 #r <- aggregate(list(f = b$year), list(x = round(log(b$carapace.width), 2), year = b$year), length)
 data <- aggregate(list(f = b$year), 

@@ -106,7 +106,7 @@ template<class Type> Type objective_function<Type>::operator()(){
       }
    }
    for (int i = 0; i < n_group; i++){
-      p(0,i) = 1 / (1 + sum_logit_p[i]);
+      p(0,i) = 1 / (1 + sum_logit_p_mature[i]);
       for (int j = 1; j < n_instar; j++){
          p_mature(j,i) = exp(logit_p_mature(j-1,i)) / (1 + sum_logit_p_mature[i]); // Proportions by instar and group.
       }
