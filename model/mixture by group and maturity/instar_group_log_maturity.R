@@ -88,8 +88,6 @@ parameters <- list(mu_instar_0 = as.numeric(log(mu_instars[1])),   # Mean size o
                    logit_p_instar_group_mature = rep(0, (length(mu_instars)-1) * length(unique(data$group)))
                    ) 
   
-parameters <- parameters[parameters.cpp("instar_group_log_maturity.cpp")]
-#data       <- data[data.cpp("instar_group_log_maturity.cpp")]
 random     <- c("mu_instar_group", "mu_instar_group_mature", "logit_p_instar_group", "logit_p_instar_group_mature", "log_sigma_instar_group")
 
 # Fit mixture proportions for immatures:
@@ -102,7 +100,15 @@ map$log_sigma_logit_p_instar_group <- factor(1)
 map$logit_p_instar_group_mature <- factor(1:length(parameters$logit_p_instar_group))
 map$log_sigma <- factor(1)
 
-            
+obj <- MakeADFun(data[data.cpp("instar_group_log_maturity.cpp")], 
+                 parameters[parameters.cpp("instar_group_log_maturity.cpp")], 
+                 random = random, map = map, DLL = "instar_group_log_maturity")
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+obj$par <- theta
+rep <- sdreport(obj)
+parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
+
+          
 #map$log_sigma <- factor(rep(1,data$n_instar))
 
 
