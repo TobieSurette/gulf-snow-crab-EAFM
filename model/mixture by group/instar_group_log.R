@@ -36,9 +36,22 @@ if (sex == 2){
 } 
 b$year <- year(b)
 b$tow.id <- tow.id(b)
+b <- b[!is.na(b$tow.id), ]
+b <- sort(b, by = c("date", "tow.number", "crab.number"))
 
-tows <- unique(b[c("date", "tow.id")])
-b$tow <- match(b[c("date", "tow.id")], tows)-1
+# Create tow table and tow index:
+tows <- aggregate(list(n = b$carapace.width),  b[c("date", "tow.number", "tow.id")], length)
+tows <- sort(tows, by = c("date", "tow.number"))
+b$tow <- match(b[c("date", "tow.number")], tows[c("date", "tow.number")]) - 1
+tows <- aggregate(list(n = b$carapace.width),  b[c("date", "tow", "tow.number", "tow.id")], length)
+tows <- sort(tows, by = c("date", "tow.number"))
+
+# Import swept area:
+s <- read.scsset(years, valid = 1)
+s <- s[!duplicated(s[c("date", "tow.number")]), ]
+ix <- match(tows[c("date", "tow.number")], s[c("date", "tow.number")])
+tows$swept.area <- s$swept.area[ix]
+
 #ix <- which(is.mature(b) & !is.new.shell(b))
 #b <- b[-ix, ]
 
@@ -49,11 +62,12 @@ b$tow <- match(b[c("date", "tow.id")], tows)-1
 
 if (maturity == 0) xlim = c(2.5, 4.25)
 if (maturity == 1) xlim = c(3.5, 4.5)
-b$tow <- match(b$tow, sort(unique(b$tow))) - 1
 
+c(3.22, 4.63, 6.62, 10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
 mu_instars <- c(10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
 names(mu_instars) <- 4:11
 mu_instars <- mu_instars[as.character(4:9)]
+
 
 # Set up data:
 #r <- aggregate(list(f = b$year), list(x = round(log(b$carapace.width), 2), year = b$year), length)
@@ -64,6 +78,7 @@ r <- aggregate(list(f = b$year),
                          year = b$year, 
                          x = round(log(b$carapace.width), 2)), 
                length)
+
 data <- list(x = r$x, 
              f = r$f)
 data$group <- r$group
@@ -116,7 +131,7 @@ rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
 
 t <- table(data$group)
-groups <- as.numeric(names(t[rev(order(t))]))[1:10]
+groups <- as.numeric(names(t[rev(order(t))]))[1:5]
 plot.instar.group(obj, data, xlim = xlim, ylim = c(0, 20), groups = groups)
 
 # Fit mixture global means:
