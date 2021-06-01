@@ -19,7 +19,7 @@ mu_instars <- c(3.22, 4.63, 6.62, 10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0
 names(mu_instars) <- 1:11
 mu_instars <- mu_instars[as.character(4:10)]
    
-setwd("/Users/crustacean/Desktop/gulf-snow-crab-EAFM/model/mixture by group and maturity")
+setwd("model/instar mixture by group and maturity/")
 
 # Work computer fix:
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:/Rtools/mingw_64/bin/")
@@ -70,17 +70,24 @@ data <- as.list(data)
 data$n_instar <- length(mu_instars)
 data$n_group  <- max(data$group) + 1
 data$precision <- rep(0.1, length(data$x))
+data$first_instar        <- as.numeric(names(mu_instars)[1])
+data$first_mature_instar <- 9      
+
 
 # Define initial parameters:
 parameters <- list(mu_instar_0 = as.numeric(log(mu_instars[1])),   # Mean size of the first instar.
                    log_increment = log(0.345),                         # Log-scale mean parameter associated with instar growth increments.
                    log_increment_delta = log(0.010),
+                   log_increment_mature = log(0.20),
+                   log_delta_maturation = 0.05,
                    log_sigma_mu_instar_group = -4,                 # Log-scale error for instar-group means random effect.
                    mu_instar_group = rep(0, length(mu_instars) * length(unique(data$group))),  # Instar-group means random effect.
                    mu_instar_group_mature = rep(0, length(mu_instars) * length(unique(data$group))),  # Instar-group means random effect.
-                   log_sigma = -2,             # Log-scale instar standard error.
+                   log_sigma_0 = -2,             # Log-scale instar standard error.
                    log_sigma_instar_group = rep(0, length(mu_instars) * length(unique(data$group))),
                    log_sigma_sigma_instar_group = -4,
+                   log_sigma_increment = 0, 
+                   log_sigma_maturation = -0.5,
                    mu_logit_p = rep(4, data$n_instar-1),           # Instar proportions log-scale mean parameter.
                    mu_logit_p_mature = rep(4, data$n_instar-1), 
                    log_sigma_logit_p_instar_group = -1,            # Instar-group proportions log-scale error parameter.
@@ -88,6 +95,10 @@ parameters <- list(mu_instar_0 = as.numeric(log(mu_instars[1])),   # Mean size o
                    logit_p_instar_group_mature = rep(0, (length(mu_instars)-1) * length(unique(data$group)))
                    ) 
   
+names(parameters)[!(names(parameters) %in% parameters.cpp("instar_group_log_maturity.cpp"))]
+parameters.cpp("instar_group_log_maturity.cpp")[!(parameters.cpp("instar_group_log_maturity.cpp") %in% names(parameters))]
+
+
 random     <- c("mu_instar_group", "mu_instar_group_mature", "logit_p_instar_group", "logit_p_instar_group_mature", "log_sigma_instar_group")
 
 # Fit mixture proportions for immatures:
@@ -98,7 +109,7 @@ map$logit_p_instar_group <- factor(1:length(parameters$logit_p_instar_group))
 map$mu_logit_p_mature <- factor(1:(data$n_instar-1))
 map$log_sigma_logit_p_instar_group <- factor(1)
 map$logit_p_instar_group_mature <- factor(1:length(parameters$logit_p_instar_group))
-map$log_sigma <- factor(1)
+map$log_sigma_0 <- factor(1)
 
 obj <- MakeADFun(data[data.cpp("instar_group_log_maturity.cpp")], 
                  parameters[parameters.cpp("instar_group_log_maturity.cpp")], 
@@ -108,20 +119,29 @@ obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
 
-          
 #map$log_sigma <- factor(rep(1,data$n_instar))
 
+map$mu_instar_0          <- factor(1)
+map$log_increment        <- factor(1)
+map$log_increment_delta  <- factor(1)
+map$log_increment_mature <- factor(1)
+map$log_sigma_mu_instar_group <- factor(1)
 
-map$log_increment       <- factor(1)
-map$log_increment_delta <- factor(1)
-
-map$mu_instar_0 <- factor(1)
-map$mu_instar_0 <- factor(NA)
+map$log_delta_maturation <- factor(1)
 
 map$mu_instar_group <- factor(1:length(parameters$mu_instar_group))
 map$mu_instar_group_mature <- factor(1:length(parameters$mu_instar_group_mature))
 
 map$log_sigma_mu_instar_group <- factor(1)
+
+obj <- MakeADFun(data[data.cpp("instar_group_log_maturity.cpp")], 
+                 parameters[parameters.cpp("instar_group_log_maturity.cpp")], 
+                 random = random, DLL = "instar_group_log_maturity")
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+obj$par <- theta
+rep <- sdreport(obj)
+parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
+
 
 
 

@@ -1,0 +1,50 @@
+---
+title: "Instar analysis"
+author: "Tobie Surette"
+date: "28/05/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Instar Analysis
+
+## Introduction
+
+
+## Methods
+
+### Model Description:
+
+In the literature, benthic stages of snow crab instars are numbered using roman numerals, with I representing the first stage after the megalopa larvae have settled on the bottom and moulted.
+
+For both sexes, instars I to VIII are considered sexually immature and characterized by high relative growth rates. Adolescence begins with the onset of gonadal development at instar VIII, which is characterized by lower relative growth rates. 
+
+
+
+
+For the purposes of this model, we assumed that instars I to VIII grew according to the same growth model.
+
+
+Sexual maturity, equated here as the terminal moult accompanied by characteristic morphometric changes, is attained at instars IX or larger. The vast majority of female snow crabs reach sexual maturity at instars IX and X. 
+
+Females growing to instar XI and larger were considered as being too rare an occurrence to be considered in the analysis. Mature male snow crab moult to maturity over a much wider size range, from instars IX to XIII. Instar XIV males were considered as relatively rare and not considered in the model. It follows that instar X in females and instar XII in males were the largest adolescent instars.
+Growth in the model is a combination of two separate processes: one which specifies the probability of moulting from one instar to the next, and the other which specifies the predicted increase in size and its variation when moulting. 
+
+Two moulting processes were considered. Sexual maturation was modelled as the proportions of crab that undergo the terminal moult to maturity by instar and year. Although the probability of moulting to maturity for the largest adolescent instars, i.e. instar IX in females and XII in males, was considered to be 1, instars VIII in females and instars VIII-XI in males show variable proportions from year-to-year. Skip-moulting was only considered for adolescent males, was similarly modelled by instar and year. Moulting was considered to occur annually all instars.
+
+Although the odd instar I, II and III do appear in survey catches, only instar IV crab are present in sufficient amounts to be analyzed by the model. For practical reasons, annual recruitment to the population was defined as the abundance of instar IV. 
+
+### Model Specification:
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -14,6 +14,9 @@ dimnames(p_mature) <- list(instar = names(mu_instars), tow = tows$tow)
 sigma <- r$sigma
 dimnames(sigma) <- list(instar = names(mu_instars), tow = tows$tow)
 
+sigma_mature <- r$sigma_mature
+dimnames(sigma_mature) <- list(instar = names(mu_instars), tow = tows$tow)
+
 k <- 5
 for (y in 1:length(years)){  
    t <- tows[year(tows$date) == years[y], ]
@@ -22,7 +25,7 @@ for (y in 1:length(years)){
    tmp <- lapply(data, function(x) if (length(x) == length(ix)) return(x[ix]) else return(x))
 
    clg()
-   file <- paste0("Female immature histograms SCS maturity ", years[y], ".pdf")
+   file <- paste0("Female histograms SCS maturity ", years[y], ".pdf")
    pdf(file = file, width = 8.5, height = 8.5)
    m <- kronecker(matrix(1:10, ncol = 2, byrow = TRUE), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, cbind(0, 0, m, 0), 0, 0)
@@ -81,7 +84,7 @@ for (y in 1:length(years)){
             x0 <- seq(0, 5, by = 0.01)
             d <- rep(0, length(x0))
             for (j in 1:nrow(mu)){
-               a <- 0.01 * sum(tmp$f[ix][tmp$maturity[ix] == 1]) * p_mature[j,as.character(groups[i])] * dnorm(x0, mu_mature[j,as.character(groups[i])], sigma[j,as.character(groups[i])])
+               a <- 0.01 * sum(tmp$f[ix][tmp$maturity[ix] == 1]) * p_mature[j,as.character(groups[i])] * dnorm(x0, mu_mature[j,as.character(groups[i])], sigma_mature[j,as.character(groups[i])])
                lines(x0, a, lwd = 1, lty = "dashed", col = "darkolivegreen")
                d <- d + a
             }

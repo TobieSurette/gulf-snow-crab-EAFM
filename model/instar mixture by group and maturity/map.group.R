@@ -15,6 +15,8 @@ p_mature <- r$p_mature
 dimnames(p_mature) <- list(instar = names(mu_instars), tow = tows$tow)
 sigma <- r$sigma
 dimnames(sigma) <- list(instar = names(mu_instars), tow = tows$tow)
+sigma_mature <- r$sigma_mature
+dimnames(sigma_mature) <- list(instar = names(mu_instars), tow = tows$tow)
 
 # Calculate instar counts:
 #c(3.19, 5.12 7.65, 10.97, 15.32, 21.02, 28.48, 38.25, 50.73, 64.53, 79.79, 96.67, 115.34, 135.99)
@@ -24,7 +26,7 @@ dimnames(sigma) <- list(instar = names(mu_instars), tow = tows$tow)
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
-   file <- paste0("Female immature instar size anomaly maps ", years[j], ".pdf")
+   file <- paste0("maps/Female immature instar size anomaly maps ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -78,7 +80,7 @@ d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
-   file <- paste0("Female immature instar density maps ", years[j], ".pdf")
+   file <- paste0("maps/Female immature instar density maps ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -131,7 +133,7 @@ d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
 years <- sort(unique(data$year))
 instars <- 5:9
 for (j in 1:length(years)){
-   file <- paste0("Female mature instar density maps ", years[j], ".pdf")
+   file <- paste0("maps/Female mature instar density maps ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -177,38 +179,38 @@ for (j in 1:length(years)){
    dev.off()
 }
 
-# Annual log-scale size differences:
-clg()
-dev.new(width = 8.5, height = 11)
-m <- kronecker(matrix(1:6, ncol = 1), matrix(1, ncol = 5, nrow = 5))
-m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
-layout(m)
-par(mar = c(0,0,0,0))
-for (i in 1:nrow(mu)){
-   if (i == 4) mtext("Log-scale size anomaly", 2, 2.5, cex = 1.25, at = par("usr")[3])
-   z <- mu[nrow(mu)-i+1, ] - r$mu_instar[nrow(mu)-i+1]
-   boxplot(z ~ year(tows$date), cex = 0.2, xlab = "", ylab = "", xaxt = "n", ylim = c(-.08, 0.08))
-   mtext(as.roman(nrow(mu)-i+1+3), 4, 1, cex = 1.25)
+# Calculate instar frequencies:
+n_imm <- t(p) * repvec(tows$n_imm, ncol = length(mu_instars))
+n_mat <- t(p_mature) * repvec(tows$n_mat, ncol = length(mu_instars))
+n_mat[, 7] / n_imm[, 6]
+plot(t(n)[, 7])
+
+
+z <- log(n_imm[, 6] / n_mat[, 6])
+z[!is.finite(z)]   <- NA
+z <- as.numeric(z)
+
+for (j in 1:length(years)){
+   clg()
+   file <- paste0("maps/Female ratio of immature instar IX to mature instar IX ", years[j], ".pdf")
+   pdf(file = file, width = 8.5, height = 8.5)
+   
+   map.new()
+   ix <- which((z > 0) & (year(tows) == years[j]))
+   points(tows$longitude[ix], tows$latitude[ix], cex = 1.0 * sqrt(z[ix]), pch = 21, bg = "black")
+   ix <- which((z < 0) & (year(tows) == years[j]))
+   points(tows$longitude[ix], tows$latitude[ix], cex = 1.0 * sqrt(-z[ix]), pch = 21, bg = "red")
+   map("coast")
+   
+   v <- seq(-3, 3)
+   legend("bottomleft", 
+          legend = c("20:1", "6:1", "3:1", "1:1", "1:3", "1:6", "1:20"),
+          pch = 21,
+          pt.bg = rev(c("red", "red", "red", "black", "black", "black", "black")),
+          pt.cex = sqrt(abs(v)),
+          bg = "white")
+
+   dev.off()
 }
-axis(1, at = seq(3, 33, by = 5), labels = years[seq(3, 33, by = 5)])
-mtext("Year", 1, 2.75, cex = 1.5)
-
-# Pairwise plots:
-clg()
-dev.new(width = 8.5, height = 11)
-m <- kronecker(matrix(1:36, ncol = 6), matrix(1, ncol = 5, nrow = 5))
-m <- rbind(0, cbind(0, 0, m, 0), 0, 0)
-layout(m)
-par(mar = c(0,0,0,0))
-for (i in 1:6){
-   for (j in 1:6){
-      plot(mu[i, ], mu[j, ], cex = 0.1)
-   }
-}
-
-
-
-
-
 
 

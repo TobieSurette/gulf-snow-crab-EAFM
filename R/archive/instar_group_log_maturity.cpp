@@ -8,8 +8,8 @@ template<class Type> Type objective_function<Type>::operator()(){
    DATA_IVECTOR(group);                           // group identifier (n). 
    DATA_INTEGER(n_instar);                        // Number of instars.
    DATA_INTEGER(n_group);                         // Number of groups.
-   DATA_INTEGER(first_instar);                    // Number of first instar.
-   DATA_INTEGER(first_mature_instar);             // Number of first instar.
+   DATA_INTEGER(first_instar);                    // Number corresponding to first instar.
+   DATA_INTEGER(first_mature_instar);             // Number corresponding to first mature instar.
 
    // Instar growth parameters:
    PARAMETER(mu_instar_0);                        // Mean size of the first instar.
@@ -138,6 +138,7 @@ template<class Type> Type objective_function<Type>::operator()(){
       v -= f[i] * log(d);
    }
    
+   // Export values:
    REPORT(mu);
    REPORT(mu_mature);
    REPORT(p);
@@ -153,8 +154,3 @@ template<class Type> Type objective_function<Type>::operator()(){
    
    return v;
 }
-
-
-/*** R
-timesTwo(42)
-*/
