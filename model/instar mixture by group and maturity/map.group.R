@@ -131,7 +131,7 @@ n <- p_mature * repvec(tows$n, nrow = data$n_instar)
 d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
 # Plot instar densities grouped by year:
 years <- sort(unique(data$year))
-instars <- 5:9
+instars <- 5:10
 for (j in 1:length(years)){
    file <- paste0("maps/Female mature instar density maps ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
@@ -186,15 +186,18 @@ n_mat[, 7] / n_imm[, 6]
 plot(t(n)[, 7])
 
 
-z <- log(n_imm[, 6] / n_mat[, 7])
+z <- log(n_imm[, 6] / n_mat[, 6])
 z[!is.finite(z)]   <- NA
 z <- as.numeric(z)
 
+clg()
+file <- paste0("maps/Female ratio of immature instar IX to mature instar IX.pdf")
+pdf(file = file, width = 8.5, height = 8.5)
+m <- kronecker(matrix(1:4, ncol = 2), matrix(1, ncol = 5, nrow = 5))
+m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
+layout(m)
+par(mar = c(0,0,0,0))
 for (j in 1:length(years)){
-   clg()
-   file <- paste0("maps/Female ratio of immature instar IX to mature instar X ", years[j], ".pdf")
-   pdf(file = file, width = 8.5, height = 8.5)
-   
    map.new()
    ix <- which((z > 0) & (year(tows) == years[j]))
    points(tows$longitude[ix], tows$latitude[ix], cex = 1.0 * sqrt(z[ix]), pch = 21, bg = "black")
@@ -210,7 +213,12 @@ for (j in 1:length(years)){
           pt.cex = sqrt(abs(v)),
           bg = "white")
 
-   dev.off()
+   
+   text(par("usr")[1] + 0.5 * diff(par("usr")[1:2]),
+        par("usr")[3] + 0.9 * diff(par("usr")[3:4]),
+        years[j], cex = 1.25)
+   box()
 }
-
-
+str <- "Black circles show >50% proportion of immatures, while red circles show > 50% proportions of matures" 
+mtext(str, 1, at = par("usr")[1])
+dev.off()
