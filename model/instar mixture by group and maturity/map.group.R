@@ -186,13 +186,13 @@ n_mat[, 7] / n_imm[, 6]
 plot(t(n)[, 7])
 
 
-z <- log(n_imm[, 6] / n_mat[, 6])
+z <- log(n_imm[, 6] / n_mat[, 7])
 z[!is.finite(z)]   <- NA
 z <- as.numeric(z)
 
 for (j in 1:length(years)){
    clg()
-   file <- paste0("maps/Female ratio of immature instar IX to mature instar IX ", years[j], ".pdf")
+   file <- paste0("maps/Female ratio of immature instar IX to mature instar X ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 8.5)
    
    map.new()
