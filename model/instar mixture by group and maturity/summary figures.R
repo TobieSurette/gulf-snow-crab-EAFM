@@ -42,7 +42,7 @@ box()
 # Annual log-scale size differences:
 clg()
 dev.new(width = 8.5, height = 11)
-m <- kronecker(matrix(1:6, ncol = 1), matrix(1, ncol = 5, nrow = 5))
+m <- kronecker(matrix(1:7, ncol = 1), matrix(1, ncol = 5, nrow = 5))
 m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
 layout(m)
 par(mar = c(0,0,0,0))

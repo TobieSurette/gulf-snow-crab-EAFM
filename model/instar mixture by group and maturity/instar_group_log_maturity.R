@@ -12,10 +12,10 @@ dyn.load(dynlib("instar_group_log_maturity"))
 BSM <- FALSE
 sex      <- 2           # Crab sex.
 maturity <- 0           # Crab maturity.
-years    <- 2017:2020   # Define survey years.
+years    <- 2010:2020   # Define survey years.
 
 # Define instar mean sizes:
-mu_instars <- c(3.22, 4.63, 6.62, 10.5, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
+mu_instars <- c(3.22, 4.63, 6.62, 9.87, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
 names(mu_instars) <- 1:11
 mu_instars <- mu_instars[as.character(4:10)]
    
@@ -42,6 +42,9 @@ if (BSM){
    b <- sort(b, by = c("date", "tow.number", "crab.number"))
    b$carapace.width <- as.numeric(b$carapace.width)
    b <- b[!is.na(b$carapace.width), ]
+   
+   b$maturity[b$carapace.width <= 25] <- FALSE
+   b <- b[which(b$carapace.width < 90), ]
 }
 
 # Create tow table and tow index:
@@ -55,7 +58,9 @@ tows  <- sort(tows, by = c("date", "tow.number"))
 s <- read.scsset(year = years, valid = 1, survey = "regular")
 ix <- match(tows[c("date", "tow.number")], s[c("date", "tow.number")])
 tows$swept.area <- s$swept.area[ix]
-   
+tows$longitude <- lon(s)[ix]
+tows$latitude <- lat(s)[ix]
+
 # Set up data:
 #r <- aggregate(list(f = b$year), list(x = round(log(b$carapace.width), 2), year = b$year), length)
 data <- aggregate(list(f = b$year), 
@@ -73,24 +78,23 @@ data$precision <- rep(0.1, length(data$x))
 data$first_instar        <- as.numeric(names(mu_instars)[1])
 data$first_mature_instar <- 9      
 
-
 # Define initial parameters:
 parameters <- list(mu_instar_0 = as.numeric(log(mu_instars[1])),   # Mean size of the first instar.
-                   log_increment = log(0.345),                         # Log-scale mean parameter associated with instar growth increments.
-                   log_increment_delta = log(0.010),
-                   log_increment_mature = log(0.20),
-                   log_delta_maturation = 0.05,
-                   log_sigma_mu_instar_group = -4,                 # Log-scale error for instar-group means random effect.
+                   log_increment = -0.901,                         # Log-scale mean parameter associated with instar growth increments.
+                   log_increment_delta = -3.8,
+                   log_increment_mature = -2.42, 
+                   log_delta_maturation = 0.0853,
+                   log_sigma_mu_instar_group = -2,                 # Log-scale error for instar-group means random effect.
                    mu_instar_group = rep(0, length(mu_instars) * length(unique(data$group))),  # Instar-group means random effect.
                    mu_instar_group_mature = rep(0, length(mu_instars) * length(unique(data$group))),  # Instar-group means random effect.
-                   log_sigma_0 = -2,             # Log-scale instar standard error.
+                   log_sigma_0 = -2.57,             # Log-scale instar standard error.
                    log_sigma_instar_group = rep(0, length(mu_instars) * length(unique(data$group))),
                    log_sigma_sigma_instar_group = -4,
-                   log_sigma_increment = 0, 
-                   log_sigma_maturation = -0.5,
+                   log_sigma_increment = -0.0185, 
+                   log_sigma_maturation = -0.0828,
                    mu_logit_p = rep(4, data$n_instar-1),           # Instar proportions log-scale mean parameter.
                    mu_logit_p_mature = rep(4, data$n_instar-1), 
-                   log_sigma_logit_p_instar_group = -1,            # Instar-group proportions log-scale error parameter.
+                   log_sigma_logit_p_instar_group = 0.57,            # Instar-group proportions log-scale error parameter.
                    logit_p_instar_group = rep(0, (length(mu_instars)-1) * length(unique(data$group))), # Multi-logit-scale parameters for instar-group proportions by year.
                    logit_p_instar_group_mature = rep(0, (length(mu_instars)-1) * length(unique(data$group)))
                    ) 
@@ -114,7 +118,7 @@ map$log_sigma_0 <- factor(1)
 obj <- MakeADFun(data[data.cpp("instar_group_log_maturity.cpp")], 
                  parameters[parameters.cpp("instar_group_log_maturity.cpp")], 
                  random = random, map = map, DLL = "instar_group_log_maturity")
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 2000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
@@ -125,19 +129,24 @@ map$mu_instar_0          <- factor(1)
 map$log_increment        <- factor(1)
 map$log_increment_delta  <- factor(1)
 map$log_increment_mature <- factor(1)
+
+parameters$log_sigma_mu_instar_group <- -4
+
+map$mu_instar_group <- factor(1:length(parameters$mu_instar_group))
+map$mu_instar_group_mature <- factor(1:length(parameters$mu_instar_group_mature))
+
+
 map$log_sigma_mu_instar_group <- factor(1)
 
 map$log_delta_maturation <- factor(1)
 
-map$mu_instar_group <- factor(1:length(parameters$mu_instar_group))
-map$mu_instar_group_mature <- factor(1:length(parameters$mu_instar_group_mature))
 
 map$log_sigma_mu_instar_group <- factor(1)
 
 obj <- MakeADFun(data[data.cpp("instar_group_log_maturity.cpp")], 
                  parameters[parameters.cpp("instar_group_log_maturity.cpp")], 
                  random = random, DLL = "instar_group_log_maturity")
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 2000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
