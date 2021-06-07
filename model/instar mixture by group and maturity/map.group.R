@@ -131,7 +131,7 @@ n <- p_mature * repvec(tows$n, nrow = data$n_instar)
 d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
 # Plot instar densities grouped by year:
 years <- sort(unique(data$year))
-instars <- 5:9
+instars <- 5:10
 for (j in 1:length(years)){
    file <- paste0("maps/Female mature instar density maps ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
@@ -186,9 +186,13 @@ n_mat[, 7] / n_imm[, 6]
 plot(t(n)[, 7])
 
 
+# Multi-panel plot please: 
+
+# Add bathymetry:
 z <- log(n_imm[, 6] / n_mat[, 7])
 z[!is.finite(z)]   <- NA
 z <- as.numeric(z)
+
 
 for (j in 1:length(years)){
    clg()
