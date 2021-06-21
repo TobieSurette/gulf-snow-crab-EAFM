@@ -186,12 +186,12 @@ n_mat[, 7] / n_imm[, 6]
 plot(t(n)[, 7])
 
 
-z <- log(n_imm[, 6] / n_mat[, 6])
+z <- log(n_imm[, 6] / n_mat[, 7])
 z[!is.finite(z)]   <- NA
 z <- as.numeric(z)
 
 clg()
-file <- paste0("maps/Female ratio of immature instar IX to mature instar IX.pdf")
+file <- paste0("maps/Female ratio of immature instar IX to mature instar X.pdf")
 pdf(file = file, width = 8.5, height = 8.5)
 m <- kronecker(matrix(1:4, ncol = 2), matrix(1, ncol = 5, nrow = 5))
 m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -220,5 +220,5 @@ for (j in 1:length(years)){
    box()
 }
 str <- "Black circles show >50% proportion of immatures, while red circles show > 50% proportions of matures" 
-mtext(str, 1, at = par("usr")[1])
+mtext(str, 1, 2.5, at = par("usr")[1])
 dev.off()
