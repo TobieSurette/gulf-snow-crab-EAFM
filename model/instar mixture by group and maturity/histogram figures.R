@@ -25,7 +25,7 @@ for (y in 1:length(years)){
    tmp <- lapply(data, function(x) if (length(x) == length(ix)) return(x[ix]) else return(x))
 
    clg()
-   file <- paste0("Female histograms SCS maturity ", years[y], ".pdf")
+   file <- paste0("Female histograms SCS maturity test ", years[y], ".pdf")
    pdf(file = file, width = 8.5, height = 8.5)
    m <- kronecker(matrix(1:10, ncol = 2, byrow = TRUE), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, cbind(0, 0, m, 0), 0, 0)

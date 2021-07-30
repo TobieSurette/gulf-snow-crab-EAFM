@@ -18,15 +18,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### Model Description:
 
+
+
+
 In the literature, benthic stages of snow crab instars are numbered using roman numerals, with I representing the first stage after the megalopa larvae have settled on the bottom and moulted.
 
 For both sexes, instars I to VIII are considered sexually immature and characterized by high relative growth rates. Adolescence begins with the onset of gonadal development at instar VIII, which is characterized by lower relative growth rates. 
 
 
-
-
 For the purposes of this model, we assumed that instars I to VIII grew according to the same growth model.
-
 
 Sexual maturity, equated here as the terminal moult accompanied by characteristic morphometric changes, is attained at instars IX or larger. The vast majority of female snow crabs reach sexual maturity at instars IX and X. 
 
@@ -39,12 +39,3 @@ Although the odd instar I, II and III do appear in survey catches, only instar I
 
 ### Model Specification:
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

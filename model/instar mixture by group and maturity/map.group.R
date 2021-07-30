@@ -182,6 +182,16 @@ for (j in 1:length(years)){
 # Calculate instar frequencies:
 n_imm <- t(p) * repvec(tows$n_imm, ncol = length(mu_instars))
 n_mat <- t(p_mature) * repvec(tows$n_mat, ncol = length(mu_instars))
+
+d_imm <- 1000000 * n_imm / repvec(tows$swept.area, ncol = data$n_instar)
+d_mat <- 1000000 * n_mat / repvec(tows$swept.area, ncol = data$n_instar)
+
+r_imm <- aggregate(d_imm, list(year = year(tows$date)), mean, na.rm = TRUE)
+r_mat <- aggregate(d_mat, list(year = year(tows$date)), mean, na.rm = TRUE)
+
+gbarplot(r_mat[-1, "9"] / r_imm[-nrow(r_imm), "8"], ylim = c(0, 1))
+gbarplot(r_mat[-1, "9"] / r_imm[-nrow(r_imm), "8"], ylim = c(0, 1))
+
 n_mat[, 7] / n_imm[, 6]
 plot(t(n)[, 7])
 

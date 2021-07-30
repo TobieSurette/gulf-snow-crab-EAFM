@@ -2,9 +2,12 @@ rm(list = ls())
 library(TMB)
 library(gulf.data)
 library(gulf.graphics)
+library(gulf.spatial)
 
 source("/Users/crustacean/Desktop/gulf-snow-crab-EAFM/R/TMB utilities.R")
 source("/Users/crustacean/Desktop/gulf-snow-crab-EAFM/model/mixture by group/plot.instar.group.R")
+
+setwd("model/instar mixture by group and maturity/")
 
 compile("instar_group_log_maturity.cpp")
 dyn.load(dynlib("instar_group_log_maturity"))
@@ -12,15 +15,13 @@ dyn.load(dynlib("instar_group_log_maturity"))
 BSM <- FALSE
 sex      <- 2           # Crab sex.
 maturity <- 0           # Crab maturity.
-years    <- 2010:2020   # Define survey years.
+years    <- 1990:2020   # Define survey years.
 
 # Define instar mean sizes:
 mu_instars <- c(3.22, 4.63, 6.62, 9.87, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
 names(mu_instars) <- 1:11
 mu_instars <- mu_instars[as.character(4:10)]
    
-setwd("model/instar mixture by group and maturity/")
-
 # Work computer fix:
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "SuretteTJ") Sys.setenv(BINPREF = "C:/Rtools/mingw_64/bin/")
 
@@ -43,9 +44,16 @@ if (BSM){
    b$carapace.width <- as.numeric(b$carapace.width)
    b <- b[!is.na(b$carapace.width), ]
    
-   b$maturity[b$carapace.width <= 25] <- FALSE
-   b <- b[which(b$carapace.width < 90), ]
+   b$maturity[b$carapace.width < 35] <- FALSE
+   
+   b <- b[which(b$carapace.width < 93), ]
 }
+
+bb <- b
+b <- b[b$year > 2005, ]
+
+ix <- sample(1:nrow(b), 40000)
+b <- b[ix, ]
 
 # Create tow table and tow index:
 tows  <- aggregate(list(n = b$carapace.width),  b[c("date", "tow.number")], length)
@@ -60,6 +68,7 @@ ix <- match(tows[c("date", "tow.number")], s[c("date", "tow.number")])
 tows$swept.area <- s$swept.area[ix]
 tows$longitude <- lon(s)[ix]
 tows$latitude <- lat(s)[ix]
+tows$temperature <- s$bottom.temperature[ix]
 
 # Set up data:
 #r <- aggregate(list(f = b$year), list(x = round(log(b$carapace.width), 2), year = b$year), length)
@@ -74,7 +83,7 @@ data <- aggregate(list(f = b$year),
 data <- as.list(data)
 data$n_instar <- length(mu_instars)
 data$n_group  <- max(data$group) + 1
-data$precision <- rep(0.1, length(data$x))
+data$precision <- ifelse(data$year > 1997, 0.1, 1)
 data$first_instar        <- as.numeric(names(mu_instars)[1])
 data$first_mature_instar <- 9      
 
@@ -118,7 +127,7 @@ map$log_sigma_0 <- factor(1)
 obj <- MakeADFun(data[data.cpp("instar_group_log_maturity.cpp")], 
                  parameters[parameters.cpp("instar_group_log_maturity.cpp")], 
                  random = random, map = map, DLL = "instar_group_log_maturity")
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 2000))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
@@ -130,7 +139,7 @@ map$log_increment        <- factor(1)
 map$log_increment_delta  <- factor(1)
 map$log_increment_mature <- factor(1)
 
-parameters$log_sigma_mu_instar_group <- -4
+#parameters$log_sigma_mu_instar_group <- -4
 
 map$mu_instar_group <- factor(1:length(parameters$mu_instar_group))
 map$mu_instar_group_mature <- factor(1:length(parameters$mu_instar_group_mature))
@@ -140,8 +149,7 @@ map$log_sigma_mu_instar_group <- factor(1)
 
 map$log_delta_maturation <- factor(1)
 
-
-map$log_sigma_mu_instar_group <- factor(1)
+#map$log_sigma_mu_instar_group <- factor(1)
 
 obj <- MakeADFun(data[data.cpp("instar_group_log_maturity.cpp")], 
                  parameters[parameters.cpp("instar_group_log_maturity.cpp")], 
@@ -150,8 +158,4 @@ theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 2000))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
-
-
-
-
 
