@@ -26,7 +26,7 @@ dimnames(sigma_mature) <- list(instar = names(mu_instars), tow = tows$tow)
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
-   file <- paste0("maps/Female immature instar size anomaly maps ", years[j], ".pdf")
+   file <- paste0("results/Instar size anomaly maps/Female immature ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -80,7 +80,7 @@ d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
-   file <- paste0("maps/Female immature instar density maps ", years[j], ".pdf")
+   file <- paste0("results/Instar density maps/Female immature ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -133,7 +133,7 @@ d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
 years <- sort(unique(data$year))
 instars <- 5:10
 for (j in 1:length(years)){
-   file <- paste0("maps/Female mature instar density maps ", years[j], ".pdf")
+   file <- paste0("results/Instar density maps/Female mature ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)

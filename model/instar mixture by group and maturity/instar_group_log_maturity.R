@@ -154,7 +154,7 @@ map$log_delta_maturation <- factor(1)
 obj <- MakeADFun(data[data.cpp("instar_group_log_maturity.cpp")], 
                  parameters[parameters.cpp("instar_group_log_maturity.cpp")], 
                  random = random, DLL = "instar_group_log_maturity")
-theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 2000))$par
+theta <- optim(obj$par, obj$fn, control = list(trace = 3, maxit = 1500))$par
 obj$par <- theta
 rep <- sdreport(obj)
 parameters <- update.parameters(parameters, summary(rep, "fixed"), summary(rep, "random"))
