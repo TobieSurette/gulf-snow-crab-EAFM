@@ -26,7 +26,7 @@ dimnames(sigma_mature) <- list(instar = names(mu_instars), tow = tows$tow)
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
-   file <- paste0("results/Instar size anomaly maps/Female immature ", years[j], ".pdf")
+   file <- paste0("maps/Female immature instar size anomaly maps ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -80,7 +80,7 @@ d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
 years <- sort(unique(data$year))
 instars <- 4:9
 for (j in 1:length(years)){
-   file <- paste0("results/Instar density maps/Female immature ", years[j], ".pdf")
+   file <- paste0("maps/Female immature instar density maps ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -133,7 +133,7 @@ d <- 1000000 * n / repvec(tows$swept.area, nrow = data$n_instar)
 years <- sort(unique(data$year))
 instars <- 5:10
 for (j in 1:length(years)){
-   file <- paste0("results/Instar density maps/Female mature ", years[j], ".pdf")
+   file <- paste0("maps/Female mature instar density maps ", years[j], ".pdf")
    pdf(file = file, width = 8.5, height = 11)
    m <- kronecker(matrix(1:6, ncol = 2), matrix(1, ncol = 5, nrow = 5))
    m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -189,19 +189,21 @@ d_mat <- 1000000 * n_mat / repvec(tows$swept.area, ncol = data$n_instar)
 r_imm <- aggregate(d_imm, list(year = year(tows$date)), mean, na.rm = TRUE)
 r_mat <- aggregate(d_mat, list(year = year(tows$date)), mean, na.rm = TRUE)
 
-gbarplot(r_mat[-1, "9"] / r_imm[-nrow(r_imm), "8"], ylim = c(0, 1))
-gbarplot(r_mat[-1, "9"] / r_imm[-nrow(r_imm), "8"], ylim = c(0, 1))
+gbarplot(r_mat[-1, "9"] / r_imm[-nrow(r_imm), "8"], years[-1], ylim = c(0, 1), xlab = "", ylab = "")
+mtext("Year", 1, 2.5, cex = 1.25)
+mtext("Ratio Mature instar IX / Immature instar VIII", 2, 2.5, cex = 1.25)
+grid()   
+   
 
-n_mat[, 7] / n_imm[, 6]
-plot(t(n)[, 7])
+plot(log(n_mat[, "9"] / n_imm[, "8"]), pch = 21, bg = "grey", cex = 0.6)
 
 
-z <- log(n_imm[, 6] / n_mat[, 7])
+z <- log(n_imm[, "8"] / n_mat[, "9"])
 z[!is.finite(z)]   <- NA
 z <- as.numeric(z)
 
 clg()
-file <- paste0("maps/Female ratio of immature instar IX to mature instar X.pdf")
+file <- paste0("Female ratio of immature instar IX to mature instar X.pdf")
 pdf(file = file, width = 8.5, height = 8.5)
 m <- kronecker(matrix(1:4, ncol = 2), matrix(1, ncol = 5, nrow = 5))
 m <- rbind(0, 0, cbind( 0, m, 0), 0, 0)
@@ -228,9 +230,11 @@ for (j in 1:length(years)){
         par("usr")[3] + 0.9 * diff(par("usr")[3:4]),
         years[j], cex = 1.25)
    box()
+   
+   if (j %% 4 == 0){
+       str <- "Black circles show >50% proportion of immatures, while red circles show > 50% proportions of matures"
+       mtext(str, 1, 1.5, at = par("usr")[1])
+   }
 }
-
-str <- "Black circles show >50% proportion of immatures, while red circles show > 50% proportions of matures"
-mtext(str, 1, at = par("usr")[1])
 
 dev.off()

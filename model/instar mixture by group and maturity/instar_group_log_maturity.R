@@ -49,11 +49,11 @@ if (BSM){
    b <- b[which(b$carapace.width < 93), ]
 }
 
-bb <- b
-b <- b[b$year > 2005, ]
+#bb <- b
+#b <- b[b$year > 2005, ]
 
-ix <- sample(1:nrow(b), 40000)
-b <- b[ix, ]
+#ix <- sample(1:nrow(b), 40000)
+#b <- b[ix, ]
 
 # Create tow table and tow index:
 tows  <- aggregate(list(n = b$carapace.width),  b[c("date", "tow.number")], length)
