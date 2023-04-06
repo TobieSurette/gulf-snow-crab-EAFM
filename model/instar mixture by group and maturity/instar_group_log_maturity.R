@@ -2,6 +2,7 @@ rm(list = ls())
 library(TMB)
 library(gulf.data)
 library(gulf.graphics)
+library(TMB)
 library(gulf.spatial)
 
 source("/Users/crustacean/Desktop/gulf-snow-crab-EAFM/R/TMB utilities.R")
@@ -15,7 +16,7 @@ dyn.load(dynlib("instar_group_log_maturity"))
 BSM <- FALSE
 sex      <- 2           # Crab sex.
 maturity <- 0           # Crab maturity.
-years    <- 1990:2020   # Define survey years.
+years    <- 1990:2022   # Define survey years.
 
 # Define instar mean sizes:
 mu_instars <- c(3.22, 4.63, 6.62, 9.87, 14.5, 20.5, 28.1, 37.8, 51.1, 68.0, 88.0)
