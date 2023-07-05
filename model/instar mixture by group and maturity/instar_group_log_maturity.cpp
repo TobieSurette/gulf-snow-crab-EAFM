@@ -103,7 +103,6 @@ template<class Type> Type objective_function<Type>::operator()(){
       }
    }  
 
-   
    // Instar proportion effects:
    v += -sum(dnorm(logit_p_instar_group, 0, exp(log_sigma_logit_p_instar_group), true));
    v += -sum(dnorm(logit_p_instar_group_mature, 0, exp(log_sigma_logit_p_instar_group), true));

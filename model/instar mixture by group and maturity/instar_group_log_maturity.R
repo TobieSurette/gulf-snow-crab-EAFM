@@ -5,8 +5,8 @@ library(gulf.graphics)
 library(TMB)
 library(gulf.spatial)
 
-source("/Users/crustacean/Desktop/gulf-snow-crab-EAFM/R/TMB utilities.R")
-source("/Users/crustacean/Desktop/gulf-snow-crab-EAFM/model/mixture by group/plot.instar.group.R")
+source("R/TMB utilities.R")
+source("model/mixture by group/plot.instar.group.R")
 
 setwd("model/instar mixture by group and maturity/")
 
